@@ -26,7 +26,7 @@ export default function QuestionScreen({
   const subtitle = `${tagName} · ${item.sceneTag}`;
 
   function choiceStyle(choice) {
-    const base = { border: `1px solid var(--line)`, background: 'var(--card)' };
+    const base = { border: '1.5px solid var(--hair)', background: 'var(--surface)' };
     if (!reviewed) return base;
     const isAnswer = choice.key === correctOpt?.key;
     if (isAnswer) {

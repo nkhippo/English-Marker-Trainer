@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import AppShell, { AppHeader } from './components/AppShell.jsx';
+import AppShell, { AppHeader, ProgressRail } from './components/AppShell.jsx';
 import SetupScreen from './components/SetupScreen.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import QuestionScreen from './components/QuestionScreen.jsx';
@@ -103,9 +103,12 @@ export default function App() {
     scrollToTop();
   };
 
+  const phase = screen === 'result' ? 2 : screen === 'setup' ? 0 : 1;
+
   return (
     <AppShell>
       <AppHeader />
+      <ProgressRail phase={phase} />
 
       {error && (
         <div className="error-banner" role="alert">

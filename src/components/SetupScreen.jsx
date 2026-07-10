@@ -12,11 +12,10 @@ export default function SetupScreen({
   apiConfigured,
 }) {
   const isCustom = presetId === 'custom';
-  const topicPresets = PRESETS.filter((p) => p.id !== 'mix');
-  const mixPreset = PRESETS.find((p) => p.id === 'mix');
   const activeTags = isCustom ? customTags : getTagsForPreset(presetId);
   const tagNames = activeTags.map((t) => TAGS[t].name).join('・');
   const preset = isCustom ? null : getPresetById(presetId);
+  const canStart = activeTags.length > 0;
 
   const toggleTag = (tagId) => {
     const next = customTags.includes(tagId)
@@ -25,56 +24,73 @@ export default function SetupScreen({
     onCustomTagsChange(next);
   };
 
-  const canStart = activeTags.length > 0;
-
   return (
     <div className="setup-screen">
-      <div className="preset-row">
-        {topicPresets.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            className={`preset-card${p.id === presetId ? ' is-active' : ''}`}
-            onClick={() => onPresetChange(p.id)}
-          >
-            <div className="preset-card-title">{p.name}</div>
-            <div className="preset-card-sub">{p.desc}</div>
-          </button>
-        ))}
-      </div>
+      <h2 className="title">何を練習する？</h2>
+      <p className="sub">
+        プリセットから選ぶか、タグを個別にカスタム選択できます。慣用句・定型表現は扱いません。
+      </p>
 
-      <div className="mode-row">
+      <div className="modes">
         <button
           type="button"
-          className={`mode-card${presetId === 'mix' ? ' is-active' : ''}`}
-          onClick={() => onPresetChange('mix')}
+          className={!isCustom ? 'active' : ''}
+          onClick={() => onPresetChange(presetId === 'custom' ? 'mix' : presetId)}
         >
-          <div className="mode-card-title">{mixPreset.name}</div>
-          <div className="mode-card-sub">{mixPreset.desc}</div>
+          プリセット
         </button>
         <button
           type="button"
-          className={`mode-card${isCustom ? ' is-active' : ''}`}
+          className={isCustom ? 'active' : ''}
           onClick={() => onPresetChange('custom')}
         >
-          <div className="mode-card-title">カスタム</div>
-          <div className="mode-card-sub">タグを個別に選択</div>
+          カスタム
         </button>
       </div>
 
+      {!isCustom && (
+        <div className="steps">
+          {PRESETS.map((p, i) => {
+            const sel = p.id === presetId;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`step${sel ? ' sel' : ''}`}
+                onClick={() => onPresetChange(p.id)}
+              >
+                <span className="no">{i + 1}</span>
+                <span className="body">
+                  <span className="nm">{p.name}</span>
+                  <span className="ds">{p.desc}</span>
+                </span>
+                <span className="check" />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {isCustom && (
-        <div className="custom-tags-card">
-          {ALL_TAG_IDS.map((tagId) => (
-            <label key={tagId} className="tag-check">
-              <input
-                type="checkbox"
-                checked={customTags.includes(tagId)}
-                onChange={() => toggleTag(tagId)}
-              />
-              <span className="tag-check-name">{TAGS[tagId].name}</span>
-              <span className="tag-check-cat">{CATEGORIES[TAGS[tagId].category]}</span>
-            </label>
-          ))}
+        <div className="steps">
+          {ALL_TAG_IDS.map((tagId, i) => {
+            const sel = customTags.includes(tagId);
+            return (
+              <button
+                key={tagId}
+                type="button"
+                className={`step${sel ? ' sel' : ''}`}
+                onClick={() => toggleTag(tagId)}
+              >
+                <span className="no">{i + 1}</span>
+                <span className="body">
+                  <span className="nm">{TAGS[tagId].name}</span>
+                  <span className="ds">{CATEGORIES[TAGS[tagId].category]}</span>
+                </span>
+                <span className="check" />
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -104,9 +120,11 @@ export default function SetupScreen({
         </label>
       )}
 
-      <button type="button" className="btn-primary" disabled={!canStart} onClick={onStart}>
-        10問を生成する
-      </button>
+      <div className="phase-actions">
+        <button type="button" className="btn primary" disabled={!canStart} onClick={onStart}>
+          10問を生成する
+        </button>
+      </div>
     </div>
   );
 }

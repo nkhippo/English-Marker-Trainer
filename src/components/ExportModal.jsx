@@ -23,13 +23,13 @@ export default function ExportModal({ set, answers, onClose }) {
         </p>
         <textarea className="modal-textarea" readOnly value={md} />
         <div className="modal-actions">
-          <button type="button" className="btn-secondary" onClick={handleCopy}>
+          <button type="button" className="btn ghost" onClick={handleCopy}>
             {copied ? 'コピーしました' : 'コピー'}
           </button>
-          <button type="button" className="btn-secondary" onClick={handleDownload}>
+          <button type="button" className="btn ghost" onClick={handleDownload}>
             ダウンロード
           </button>
-          <button type="button" className="btn-primary btn-primary--compact" onClick={onClose}>
+          <button type="button" className="btn primary" onClick={onClose}>
             閉じる
           </button>
         </div>

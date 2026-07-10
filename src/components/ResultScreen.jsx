@@ -72,11 +72,11 @@ export default function ResultScreen({ set, answers, onExport, onRestart }) {
         })}
       </div>
 
-      <div className="result-actions">
-        <button type="button" className="btn-secondary" onClick={onExport}>
+      <div className="result-actions phase-actions-dual">
+        <button type="button" className="btn ghost" onClick={onExport}>
           MDエクスポート
         </button>
-        <button type="button" className="btn-primary btn-primary--compact" onClick={onRestart}>
+        <button type="button" className="btn primary" onClick={onRestart}>
           もう一度
         </button>
       </div>
