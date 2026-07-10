@@ -9,9 +9,11 @@ import {
   sanitizeItemReasonCodes,
   sanitizeModalPoolOptions,
   sanitizeNounLexicalFields,
+  sanitizeContextAndIdiom,
   validateSet,
 } from '../src/utils/validators.js';
 import { hasLemmaOverflow } from '../src/utils/lemmaCounter.js';
+import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
 
 function modalMeta(tag, pool) {
   return {
@@ -211,6 +213,41 @@ describe('validators', () => {
       expectedPool: null,
     });
     assert.ok(!errors.some((e) => e === 'V17: headNounJa required'), errors.join('; '));
+  });
+
+  it('fills missing contextEn and rewrites idiom templates', () => {
+    assert.equal(containsIdiom('Would you like ___?'), true);
+    assert.equal(rewriteIdiomTemplate('Would you like ___?'), 'Do you want ___?');
+    assert.equal(containsIdiom(rewriteIdiomTemplate('Would you like ___?')), false);
+
+    const item = sanitizeContextAndIdiom(
+      {
+        tag: 'N-NP',
+        sceneTag: '買い物',
+        functionTag: '情報を得る',
+        contextEn: null,
+        template: 'Would you like ___?',
+        headNoun: 'book',
+        headNounJa: '本',
+        countability: 'countable',
+        options: [
+          { key: 'A', text: 'a book', correct: true },
+          { key: 'B', text: 'the book', correct: false, reasonCode: 'N_DEF_NEW', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'book', correct: false, reasonCode: 'N_MARKER_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'books', correct: false, reasonCode: 'N_NUM_SG', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      { sceneTag: '買い物', functionTag: '情報を得る' },
+    );
+
+    assert.ok(item.contextEn);
+    assert.equal(item.template, 'Do you want ___?');
+    const { errors } = validateItem(item, {
+      expectedTag: 'N-NP',
+      expectedScene: { sceneTag: '買い物', functionTag: '情報を得る' },
+      expectedPool: null,
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V9') || e.startsWith('V15')), errors.join('; '));
   });
 
   it('sanitizes disallowed reasonCode for tag', () => {

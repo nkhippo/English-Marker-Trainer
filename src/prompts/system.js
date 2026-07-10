@@ -90,10 +90,10 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 ## 制約
 1. タグは事前指定を厳守。変更・追加・省略禁止。
 2. 正解は1問につき1つだけ。
-3. 慣用句禁止: Would you like / May I help you / Shall we / Why don't you / How about / Let's / Would you mind 等の疑問文型慣用フレーズを template に含めない。
+3. 慣用句禁止: Would you like / May I help you / Shall we / Why don't you / How about / Let's / Would you mind 等の疑問文型慣用フレーズを template に含めない。叙述文・通常の情報疑問（Do you want / What do you think of 等）で書く。
 4. CEFR A1〜B1 語彙のみ。難語・慣用句を避ける。
 5. 同一 lemma を1セット内で3回以上使わない。
-6. template ≤12語、contextEn ≤10語。
+6. template ≤12語、contextEn ≤10語。N-NP / N-UNC / V-MOD-DYN / V-MOD-DEO では contextEn を必ず非 null で出力する。
 7. V-MOD-DEO は義務・許可用法のみ（must=きっと〜だ の確信用法は禁止）。日本語に「きっと」「確かに」「に違いない」「絶対」を入れない。
 8. appliedMeaning は日本語1文。「〜という意味になる」で締める。誤答をそのまま使ったとき聞き手が受け取る意味を書く。
 9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。options の lemma 集合は poolUsed と完全一致必須（can / be able to / be going to 等。able to・going to と略さない）。

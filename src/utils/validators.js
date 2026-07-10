@@ -1,7 +1,8 @@
 import { CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
 import { NOUN_LEXICAL_TAGS } from '../constants/nounGrids.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
-import { containsIdiom } from '../constants/idiomBlocklist.js';
+import { containsIdiom, rewriteIdiomTemplate } from '../constants/idiomBlocklist.js';
+import { fallbackContextEn } from '../constants/sceneContexts.js';
 import { hasLemmaOverflow } from './lemmaCounter.js';
 import { expandModalOption } from './poolPicker.js';
 import { lookupHeadNounJa } from '../constants/headNounJa.js';
@@ -255,6 +256,37 @@ export function sanitizeNounLexicalFields(item, expectedGrid = null) {
         const lookedUp = lookupHeadNounJa(inferred);
         if (lookedUp) next.headNounJa = lookedUp;
       }
+    }
+  }
+
+  return changed ? next : item;
+}
+
+/**
+ * V9/V15 向け: contextEn 欠落の補完と template 慣用句の書き換え。
+ */
+export function sanitizeContextAndIdiom(item, expectedScene = null) {
+  if (!item) return item;
+
+  let next = { ...item };
+  let changed = false;
+
+  const needsContext = CONTEXT_REQUIRED_TAGS.includes(next.tag);
+  const contextMissing = !pickNonEmpty(next.contextEn, next.context_en, next.context);
+  if (needsContext && contextMissing) {
+    const sceneTag = expectedScene?.sceneTag ?? next.sceneTag;
+    next.contextEn = fallbackContextEn(sceneTag);
+    changed = true;
+  } else if (!next.contextEn && pickNonEmpty(next.context_en, next.context)) {
+    next.contextEn = pickNonEmpty(next.context_en, next.context);
+    changed = true;
+  }
+
+  if (next.template && containsIdiom(next.template)) {
+    const rewritten = rewriteIdiomTemplate(next.template);
+    if (rewritten !== next.template) {
+      next.template = rewritten;
+      changed = true;
     }
   }
 

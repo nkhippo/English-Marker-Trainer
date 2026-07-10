@@ -5,7 +5,7 @@ import { allocateTags } from './tagAllocator.js';
 import { allocateScenes } from './sceneAllocator.js';
 import { allocateModalPools } from './poolPicker.js';
 import { allocateNounGrids } from './gridAllocator.js';
-import { validateItem, validateSet, sanitizeItemReasonCodes, sanitizeModalPoolOptions, sanitizeNounLexicalFields } from './validators.js';
+import { validateItem, validateSet, sanitizeItemReasonCodes, sanitizeModalPoolOptions, sanitizeNounLexicalFields, sanitizeContextAndIdiom } from './validators.js';
 import { getPresetName } from '../constants/presets.js';
 
 function buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, index) {
@@ -51,6 +51,7 @@ export async function generateSet(userConfig) {
     let item = sanitizeItemReasonCodes(set.items[i]);
     item = sanitizeModalPoolOptions(item, meta.expectedPool);
     item = sanitizeNounLexicalFields(item, meta.expectedGrid);
+    item = sanitizeContextAndIdiom(item, meta.expectedScene);
     set.items[i] = item;
     const { valid, errors } = validateItem(item, meta);
     if (!valid) {
