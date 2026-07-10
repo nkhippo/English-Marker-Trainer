@@ -77,9 +77,9 @@ work-request §4 どおりのディレクトリ構成を構築:
 |------|------|
 | clasp 新規プロジェクト作成 | ✅ Script ID: `1LHomWbl5Xgjf_k4odLXSttZCG6aKOGqOiTFzdVDKcRRydM0d3c1q30tt` |
 | `clasp push`（code.gs） | ✅ |
-| Web App 初回デプロイ（エディタ） | ⏳ **要手動**（clasp deploy 単体では entryPoints 未設定→404） |
-| `ANTHROPIC_API_KEY` 登録 | ⏳ Script Properties または `setAnthropicApiKey()` 実行 |
-| `VITE_GAS_ENDPOINT` Secret | ⏳ Web App URL 確定後 |
+| Web App 初回デプロイ（エディタ） | ✅ `AKfycbw1j3zIHm2COG5Kkx3CT3KrzieEkODP2umvE9Hwqv7GJeYnGpxinBLcBMplu8xwa6cBRQ` |
+| `ANTHROPIC_API_KEY` 登録 | ✅ |
+| `VITE_GAS_ENDPOINT` Secret | ✅ GitHub Secrets 登録済み |
 
 手順詳細: `gas/README.md`  
 完了後の自動化: `node scripts/gas-finish-setup.mjs <WEB_APP_URL>`
@@ -88,7 +88,7 @@ work-request §4 どおりのディレクトリ構成を構築:
 
 ## 5. 既知の制限・次ステップ
 
-- **GAS デプロイ**: コードは同梱済みだが、API キー登録と Web App デプロイはリポジトリ所有者が実施する必要がある
+- **GAS デプロイ**: 完了（Web App URL 設定済み・`hasApiKey: true` 確認済み）
 - **デモモード**: API 未設定時はモック10問で全フロー体験可能（本番生成は GAS 設定後）
 - **appliedMeaning 検証**: コード検証対象外。MD エクスポート → Claude Projects での目視検証運用
 
