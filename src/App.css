@@ -491,22 +491,26 @@ p.sub {
 
 /* Choices (pre-answer chrome; post-answer colors stay inline) */
 
+/* Choices — default 1×4, then 2×2, then 4×1 */
+
 .question-card .choices-row {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-top: 14px;
 }
 
 .choice-btn {
   width: 100%;
-  text-align: left;
-  padding: 11px 14px;
+  min-width: 0;
+  text-align: center;
+  padding: 11px 10px;
   border-radius: 10px;
   font-size: 14px;
   font-family: var(--font-en);
   cursor: pointer;
   transition: 0.12s;
+  overflow-wrap: anywhere;
 }
 
 .choice-btn:hover:not(:disabled) {
@@ -514,15 +518,24 @@ p.sub {
   transform: translateY(-1px);
 }
 
-@media (min-width: 768px) {
-  .choices-row {
-    flex-direction: row;
+@media (max-width: 640px) {
+  .question-card .choices-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .choice-btn {
-    flex: 1;
-    min-width: 0;
-    text-align: center;
+    padding: 11px 12px;
+  }
+}
+
+@media (max-width: 400px) {
+  .question-card .choices-row {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-btn {
+    text-align: left;
+    padding: 11px 14px;
   }
 }
 
