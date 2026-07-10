@@ -4,6 +4,7 @@ import { REASON_CODES } from '../constants/reasonCodes.js';
 import { containsIdiom } from '../constants/idiomBlocklist.js';
 import { hasLemmaOverflow } from './lemmaCounter.js';
 import { expandModalOption } from './poolPicker.js';
+import { lookupHeadNounJa } from '../constants/headNounJa.js';
 
 const MODAL_TAGS = new Set(['V-MOD-DYN', 'V-MOD-DEO']);
 const EPISTEMIC_JA = /きっと|確かに|に違いない|絶対/;
@@ -197,6 +198,106 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
   return { ...item, poolUsed: [...expectedPool], options: rebuilt };
 }
 
+/**
+ * 名詞タグの欠落フィールドを補完する（リトライなし運用向け）。
+ * - 別名キーの正規化
+ * - countability を事前抽選グリッド / N-QNT 正解から補完
+ * - headNounJa を用語集から補完
+ */
+export function sanitizeNounLexicalFields(item, expectedGrid = null) {
+  if (!item || !NOUN_LEXICAL_TAGS.has(item.tag)) return item;
+
+  let next = { ...item };
+  let changed = false;
+
+  const headNoun = pickNonEmpty(next.headNoun, next.head_noun, next.noun);
+  const headNounJa = pickNonEmpty(
+    next.headNounJa,
+    next.head_noun_ja,
+    next.nounJa,
+    next.headNounJA,
+  );
+
+  if (headNoun && headNoun !== next.headNoun) {
+    next.headNoun = headNoun;
+    changed = true;
+  }
+  if (headNounJa && headNounJa !== next.headNounJa) {
+    next.headNounJa = headNounJa;
+    changed = true;
+  }
+
+  if (!next.countability) {
+    const fromGrid = expectedGrid?.countability;
+    const fromQnt = item.tag === 'N-QNT' ? inferCountabilityFromQnt(next) : null;
+    const fromTag = item.tag === 'N-NP' ? 'countable' : item.tag === 'N-UNC' ? 'uncountable' : null;
+    const countability = fromGrid || fromQnt || fromTag;
+    if (countability) {
+      next.countability = countability;
+      changed = true;
+    }
+  }
+
+  if (!pickNonEmpty(next.headNounJa) && next.headNoun) {
+    const lookedUp = lookupHeadNounJa(next.headNoun);
+    if (lookedUp) {
+      next.headNounJa = lookedUp;
+      changed = true;
+    }
+  }
+
+  if (!next.headNoun) {
+    const inferred = inferHeadNounFromOptions(next);
+    if (inferred) {
+      next.headNoun = inferred;
+      changed = true;
+      if (!pickNonEmpty(next.headNounJa)) {
+        const lookedUp = lookupHeadNounJa(inferred);
+        if (lookedUp) next.headNounJa = lookedUp;
+      }
+    }
+  }
+
+  return changed ? next : item;
+}
+
+function pickNonEmpty(...values) {
+  for (const v of values) {
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
+}
+
+function inferCountabilityFromQnt(item) {
+  const correct = item.options?.find((o) => o.correct)?.text?.trim().toLowerCase();
+  if (!correct) return null;
+  if (['much', 'little', 'a little'].includes(correct)) return 'uncountable';
+  if (['many', 'few', 'a few'].includes(correct)) return 'countable';
+  return null;
+}
+
+/** N-NP / N-UNC の選択肢から headNoun を推定（a book / some water など） */
+function inferHeadNounFromOptions(item) {
+  const texts = (item.options ?? []).map((o) => o.text?.trim().toLowerCase()).filter(Boolean);
+  if (texts.length < 2) return null;
+
+  const stripped = texts.map((t) =>
+    t
+      .replace(/^(a|an|the|some|any)\s+/i, '')
+      .replace(/'s$/i, '')
+      .trim(),
+  );
+
+  const singularized = stripped.map((t) => (t.endsWith('s') && t.length > 3 ? t.slice(0, -1) : t));
+  const counts = {};
+  for (const s of singularized) {
+    if (!s || s.includes(' ')) continue;
+    counts[s] = (counts[s] ?? 0) + 1;
+  }
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] >= 2 ? best[0] : null;
+}
+
 function poolSetsMatch(actual, expected) {
   const a = [...actual].sort();
   const e = [...expected].sort();
@@ -314,7 +415,7 @@ function validateV16(item) {
 function validateV17(item) {
   if (!NOUN_LEXICAL_TAGS.has(item.tag)) return null;
   if (!item.headNoun) return 'V17: headNoun required';
-  if (!item.headNounJa) return 'V17: headNounJa required';
+  // headNounJa はフィードバック用。欠落しても生成は通す（sanitize で補完を試みる）
   if (!item.countability) return 'V17: countability required';
   if (item.tag === 'N-NP' && item.countability !== 'countable') return 'V17: N-NP requires countable';
   if (item.tag === 'N-UNC' && item.countability !== 'uncountable') return 'V17: N-UNC requires uncountable';

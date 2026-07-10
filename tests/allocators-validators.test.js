@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 import { allocateTags } from '../src/utils/tagAllocator.js';
 import { allocateScenes, countSceneTags } from '../src/utils/sceneAllocator.js';
 import { MOCK_SET } from '../src/constants/mockSet.js';
-import { validateItem, validateV1, sanitizeItemReasonCodes, sanitizeModalPoolOptions, validateSet } from '../src/utils/validators.js';
+import {
+  validateItem,
+  validateV1,
+  sanitizeItemReasonCodes,
+  sanitizeModalPoolOptions,
+  sanitizeNounLexicalFields,
+  validateSet,
+} from '../src/utils/validators.js';
 import { hasLemmaOverflow } from '../src/utils/lemmaCounter.js';
 
 function modalMeta(tag, pool) {
@@ -154,6 +161,56 @@ describe('validators', () => {
     assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
     assert.ok(item.options.some((o) => o.text === 'should'));
     assert.ok(item.options.some((o) => o.text === 'may'));
+  });
+
+  it('fills missing headNounJa and countability for noun tags', () => {
+    const item = sanitizeNounLexicalFields(
+      {
+        tag: 'N-UNC',
+        sceneTag: '空港',
+        functionTag: '確認する',
+        template: "I'd like ___ please.",
+        headNoun: 'water',
+        options: [
+          { key: 'A', text: 'some water', correct: true },
+          { key: 'B', text: 'water', correct: false, reasonCode: 'N_MARKER_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'a water', correct: false, reasonCode: 'N_UNCOUNTABLE', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'the water', correct: false, reasonCode: 'N_DEF_NEW', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      { countability: 'uncountable' },
+    );
+    assert.equal(item.headNounJa, '水');
+    assert.equal(item.countability, 'uncountable');
+    const { errors } = validateItem(item, {
+      expectedTag: 'N-UNC',
+      expectedScene: { sceneTag: '空港', functionTag: '確認する' },
+      expectedPool: null,
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V17')), errors.join('; '));
+  });
+
+  it('allows noun items without headNounJa after sanitize attempt', () => {
+    const item = {
+      tag: 'N-NP',
+      sceneTag: '買い物',
+      functionTag: '情報を得る',
+      template: 'I bought ___ yesterday.',
+      headNoun: 'xylophone',
+      countability: 'countable',
+      options: [
+        { key: 'A', text: 'a xylophone', correct: true },
+        { key: 'B', text: 'the xylophone', correct: false, reasonCode: 'N_DEF_NEW', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'xylophone', correct: false, reasonCode: 'N_MARKER_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'xylophones', correct: false, reasonCode: 'N_NUM_SG', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const { errors } = validateItem(item, {
+      expectedTag: 'N-NP',
+      expectedScene: { sceneTag: '買い物', functionTag: '情報を得る' },
+      expectedPool: null,
+    });
+    assert.ok(!errors.some((e) => e === 'V17: headNounJa required'), errors.join('; '));
   });
 
   it('sanitizes disallowed reasonCode for tag', () => {

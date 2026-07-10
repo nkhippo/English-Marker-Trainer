@@ -63,6 +63,7 @@ ${poolNotes || '（なし）'}
 ${gridNotes || '（なし）'}
 
 tagAllocation のタグ・scene・poolUsed・gridPatterns を厳守すること。
-N-NP / N-UNC / N-QNT では headNoun・headNounJa・countability を必ず出力すること。
+N-NP / N-UNC / N-QNT では headNoun・headNounJa・countability を必ず出力すること（欠けると検証失敗）。
+headNounJa は headNoun の日本語訳（例: water→水, homework→宿題）。省略禁止。
 CEFR A1〜B1 語彙制約を再掲: 易しい語彙のみ。文長は template≤12語、contextEn≤10語。`;
 }
