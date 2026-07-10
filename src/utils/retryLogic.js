@@ -9,6 +9,14 @@ import { getPresetName } from '../constants/presets.js';
 
 const MAX_RETRIES = 3;
 
+function unwrapGeneratedItem(payload) {
+  if (!payload || typeof payload !== 'object') return payload;
+  if (Array.isArray(payload.items) && payload.items.length >= 1) {
+    return payload.items[0];
+  }
+  return payload;
+}
+
 function buildMeta(tagAllocation, sceneAllocations, poolAllocations, index) {
   return {
     expectedTag: tagAllocation[index],
@@ -64,7 +72,13 @@ export async function generateSet(userConfig) {
         },
       });
       const item = await regenerateItemFromApi(regenPrompt, systemBlocks);
-      set.items[i] = { ...item, id: i + 1, tag: meta.expectedTag, ...meta.expectedScene };
+      set.items[i] = {
+        ...unwrapGeneratedItem(item),
+        id: i + 1,
+        tag: meta.expectedTag,
+        ...meta.expectedScene,
+        ...(meta.expectedPool ? { poolUsed: meta.expectedPool } : {}),
+      };
       ({ valid, errors } = validateItem(set.items[i], meta));
       attempts++;
     }

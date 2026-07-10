@@ -2,7 +2,6 @@ import { CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
 import { containsIdiom } from '../constants/idiomBlocklist.js';
 import { hasLemmaOverflow } from './lemmaCounter.js';
-import { expandModalPool } from './poolPicker.js';
 
 const MODAL_TAGS = new Set(['V-MOD-DYN', 'V-MOD-DEO']);
 const EPISTEMIC_JA = /きっと|確かに|に違いない|絶対/;
@@ -14,6 +13,52 @@ function wordCount(text) {
 
 function sortedTexts(options) {
   return options.map((o) => o.text).sort();
+}
+
+/** V-MOD-DEO: 三人称などの活用形をプールの原形に戻す */
+function modalLemmaFromDeoOption(text) {
+  const t = text.trim().toLowerCase();
+  const map = {
+    'has to': 'have to',
+    'needs to': 'need to',
+    'is allowed to': 'be allowed to',
+    'is supposed to': 'be supposed to',
+  };
+  return map[t] ?? t;
+}
+
+/** V-MOD-DYN: 選択肢テキストからプール候補（原形）を抽出 */
+function modalLemmaFromDynOption(optionText, baseVerb) {
+  const text = optionText.trim().toLowerCase();
+  const bv = baseVerb.toLowerCase();
+
+  if (!text.includes(' ')) {
+    return '(bare)';
+  }
+
+  let modalPart;
+  if (text.endsWith(` ${bv}`)) {
+    modalPart = text.slice(0, -(bv.length + 1)).trim();
+  } else {
+    const parts = text.split(' ');
+    modalPart = parts.slice(0, -1).join(' ');
+  }
+
+  if (!modalPart) return '(bare)';
+
+  const conjugations = {
+    'is able to': 'be able to',
+    'are able to': 'be able to',
+    'is going to': 'be going to',
+    'are going to': 'be going to',
+  };
+  return conjugations[modalPart] ?? modalPart;
+}
+
+function poolSetsMatch(actual, expected) {
+  const a = [...actual].sort();
+  const e = [...expected].sort();
+  return a.length === e.length && a.every((v, i) => v === e[i]);
 }
 
 function validateV2(item) {
@@ -80,48 +125,26 @@ function validateV13(item, meta) {
   if (!meta.expectedPool) return 'V13: expectedPool missing';
 
   const optionTexts = sortedTexts(item.options);
-  let expected;
   if (item.tag === 'V-MOD-DYN') {
     if (!item.baseVerb) return 'V13/V16: baseVerb missing for V-MOD-DYN';
-    expected = expandModalPool(item.tag, meta.expectedPool, item.baseVerb);
-    // (bare) expands to baseVerb lemma; options for bare are conjugated forms — compare via suffix
-    const normalizedExpected = meta.expectedPool.map((c) =>
-      c === '(bare)' ? null : `${c} ${item.baseVerb}`,
-    );
-    const normalizedOptions = item.options.map((o) => {
-      const text = o.text.toLowerCase();
-      const bv = item.baseVerb.toLowerCase();
-      if (text === bv || text.endsWith(` ${bv}`) || text.endsWith(bv)) return o.text;
-      return o.text;
-    });
-    // For V-MOD-DYN, verify each pool candidate maps to exactly one option
-    for (const candidate of meta.expectedPool) {
-      if (candidate === '(bare)') {
-        const hasBare = item.options.some(
-          (o) => o.text.toLowerCase().includes(item.baseVerb.toLowerCase()) && !o.text.includes(' '),
-        );
-        if (!hasBare) return 'V13: missing (bare) conjugated option';
-      } else {
-        const phrase = `${candidate} ${item.baseVerb}`.toLowerCase();
-        if (!item.options.some((o) => o.text.toLowerCase() === phrase)) {
-          return `V13: missing option for ${candidate}`;
-        }
-      }
-    }
+
+    const optionLemmas = item.options.map((o) => modalLemmaFromDynOption(o.text, item.baseVerb));
+    if (!poolSetsMatch(optionLemmas, meta.expectedPool)) return 'V13: pool mismatch';
     if (optionTexts.length !== 4) return 'V13: option count';
     return null;
   }
 
-  expected = [...meta.expectedPool].sort();
   if (item.tag === 'V-MOD-DEO') {
-    const normalize = (t) => t.replace(/^has to$/i, 'have to');
-    const normOptions = optionTexts.map(normalize).sort();
-    const normExpected = expected.map(normalize).sort();
-    if (JSON.stringify(normOptions) !== JSON.stringify(normExpected)) return 'V13: pool mismatch';
+    const normOptions = optionTexts.map(modalLemmaFromDeoOption);
+    const normExpected = meta.expectedPool.map((t) => t.trim().toLowerCase());
+    if (!poolSetsMatch(normOptions, normExpected)) return 'V13: pool mismatch';
     return null;
   }
 
-  if (JSON.stringify(optionTexts) !== JSON.stringify(expected)) return 'V13: pool mismatch';
+  const expected = [...meta.expectedPool].sort();
+  if (JSON.stringify(optionTexts.map((t) => t.toLowerCase())) !== JSON.stringify(expected.map((t) => t.toLowerCase()))) {
+    return 'V13: pool mismatch';
+  }
   return null;
 }
 
