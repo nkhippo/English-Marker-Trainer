@@ -1,0 +1,25 @@
+export const MODAL_POOLS = {
+  'V-MOD-DYN': [
+    '(bare)',
+    'can',
+    'could',
+    'be able to',
+    'will',
+    'would',
+    'be going to',
+    'may',
+    'might',
+  ],
+  'V-MOD-DEO': [
+    'must',
+    'have to',
+    'need to',
+    'should',
+    'ought to',
+    'had better',
+    'be supposed to',
+    'may',
+    'might',
+    'be allowed to',
+  ],
+};

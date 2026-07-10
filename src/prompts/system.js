@@ -1,0 +1,92 @@
+import { TAGS, CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
+import { REASON_CODES } from '../constants/reasonCodes.js';
+import { MODAL_POOLS } from '../constants/modalPools.js';
+import { formatFewShotBlock } from './fewShot.js';
+
+function buildTagDescriptions() {
+  return Object.entries(TAGS)
+    .map(([id, t]) => `- ${id}: ${t.name}（${t.selectMode === 'pool' ? '候補プール' : '固定グリッド'}）`)
+    .join('\n');
+}
+
+function buildReasonCodeList() {
+  return Object.entries(REASON_CODES)
+    .map(([code, { template, allowedTags }]) => `- ${code}: ${template} [許容タグ: ${allowedTags.join(', ')}]`)
+    .join('\n');
+}
+
+export function buildSystemPrompt() {
+  return `あなたは英語マーカー感度トレーナー用の4択問題セットを生成するアシスタントです。
+
+## 出力形式
+- 出力は **JSON のみ**。前後に説明文・マークダウン・コードフェンスを付けない。
+- 1セット10問の Set オブジェクトを返す。スキーマ違反時は指摘された1問だけ再生成する契約（全体再生成はしない）。
+
+## Set スキーマ
+{
+  "generatedAt": "ISO8601",
+  "preset": "プリセットID",
+  "selectedTags": ["タグID", ...],
+  "tagAllocation": ["タグID" × 10],
+  "items": [ Item × 10 ]
+}
+
+## Item スキーマ
+{
+  "id": 1-10,
+  "tag": "事前指定タグ（厳守）",
+  "sceneTag": "事前指定",
+  "functionTag": "事前指定",
+  "contextEn": "英語文脈 or null（${CONTEXT_REQUIRED_TAGS.join(', ')} は必須）",
+  "ja": "日本語文",
+  "template": "英訳穴埋め（___ が1箇所・12語以内）",
+  "baseVerb": "V-MOD-DYN のみ必須",
+  "poolUsed": "V-MOD-* のみ。事前指定4語",
+  "options": [
+    { "key": "A|B|C|D", "text": "...", "correct": boolean,
+      "reasonCode": "誤答のみ（正解はnull）", "note": "誤答のみ40字以内", "appliedMeaning": "誤答のみ日本語1文" }
+  ]
+}
+
+## タグ一覧
+${buildTagDescriptions()}
+
+## reasonCode 一覧
+${buildReasonCodeList()}
+
+## 優先順位規則
+- V_TENSE と M_SEQ_TENSE が両方当てはまる場合、タグが M-SEQ なら M_SEQ_TENSE を優先。
+- 強さの軸で説明できる場合は V_MOD_TOO_WEAK/TOO_STRONG を V_MOD_SENSE_MISMATCH より優先。
+
+## 制約
+1. タグは事前指定を厳守。変更・追加・省略禁止。
+2. 正解は1問につき1つだけ。
+3. 慣用句禁止: Would you like / May I help you / Shall we / Why don't you / How about / Let's / Would you mind 等の疑問文型慣用フレーズを template に含めない。
+4. CEFR A1〜B1 語彙のみ。難語・慣用句を避ける。
+5. 同一 lemma を1セット内で3回以上使わない。
+6. template ≤12語、contextEn ≤10語。
+7. V-MOD-DEO は義務・許可用法のみ（must=きっと〜だ の確信用法は禁止）。日本語に「きっと」「確かに」「に違いない」「絶対」を入れない。
+8. appliedMeaning は日本語1文。「〜という意味になる」で締める。誤答をそのまま使ったとき聞き手が受け取る意味を書く。
+9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。
+10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。poolUsed の4語を options.text にそのまま使う。
+11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
+
+## 助動詞プール参考
+V-MOD-DYN: ${MODAL_POOLS['V-MOD-DYN'].join(', ')}
+V-MOD-DEO: ${MODAL_POOLS['V-MOD-DEO'].join(', ')}
+（shall は使用禁止）
+
+## Few-shot 例
+${formatFewShotBlock()}`;
+}
+
+/** system プロンプトを cache_control 付きブロックとして返す */
+export function buildSystemBlocks() {
+  return [
+    {
+      type: 'text',
+      text: buildSystemPrompt(),
+      cache_control: { type: 'ephemeral' },
+    },
+  ];
+}
