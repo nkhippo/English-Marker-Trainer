@@ -1,7 +1,7 @@
 /** Mock set for UI development and offline demo (prototype-derived, V-MOD-DYN uses §5.6.1 contract) */
 export const MOCK_SET = {
   generatedAt: '2026-07-10T00:00:00Z',
-  preset: 'mix',
+  preset: 'noun',
   selectedTags: [
     'N-NP', 'N-UNC', 'N-QNT', 'V-TA', 'V-VOICE', 'V-MOD-DYN', 'V-MOD-DEO',
     'M-AGR', 'M-PRON-CASE', 'M-SEQ',

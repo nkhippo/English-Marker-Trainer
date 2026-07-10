@@ -6,7 +6,7 @@ import QuestionScreen from './components/QuestionScreen.jsx';
 import ResultScreen from './components/ResultScreen.jsx';
 import ExportModal from './components/ExportModal.jsx';
 import { MOCK_SET } from './constants/mockSet.js';
-import { getTagsForPreset } from './constants/presets.js';
+import { DEFAULT_PRESET_ID, getTagsForPreset } from './constants/presets.js';
 import { isApiConfigured } from './api/claude.js';
 import { generateSet } from './utils/retryLogic.js';
 import './App.css';
@@ -17,7 +17,7 @@ function scrollToTop() {
 
 export default function App() {
   const [screen, setScreen] = useState('setup');
-  const [presetId, setPresetId] = useState('mix');
+  const [presetId, setPresetId] = useState(DEFAULT_PRESET_ID);
   const [customTags, setCustomTags] = useState([]);
   const [useMock, setUseMock] = useState(!isApiConfigured());
   const [set, setSet] = useState(null);

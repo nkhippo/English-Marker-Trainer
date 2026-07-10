@@ -1,4 +1,4 @@
-import { PRESETS, getTagsForPreset, getPresetById } from '../constants/presets.js';
+import { DEFAULT_PRESET_ID, PRESETS, getTagsForPreset, getPresetById } from '../constants/presets.js';
 import { TAGS, CATEGORIES, ALL_TAG_IDS } from '../constants/tags.js';
 
 export default function SetupScreen({
@@ -35,7 +35,7 @@ export default function SetupScreen({
         <button
           type="button"
           className={!isCustom ? 'active' : ''}
-          onClick={() => onPresetChange(presetId === 'custom' ? 'mix' : presetId)}
+          onClick={() => onPresetChange(presetId === 'custom' ? DEFAULT_PRESET_ID : presetId)}
         >
           プリセット
         </button>
