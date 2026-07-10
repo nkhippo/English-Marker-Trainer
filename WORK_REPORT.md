@@ -71,13 +71,18 @@ work-request §4 どおりのディレクトリ構成を構築:
 - GitHub Actions `Deploy to GitHub Pages` ワークフローでビルド・デプロイ
 - 本番 API 利用には GitHub Secrets `VITE_GAS_ENDPOINT` に GAS Web App URL を登録すること
 
-### GAS セットアップ（未実施の場合）
+### GAS セットアップ（2026-07-10 進捗）
 
-1. [Google Apps Script](https://script.google.com) で新規プロジェクト作成
-2. `gas/code.gs` を貼り付け
-3. プロジェクト設定 → Script Properties → `ANTHROPIC_API_KEY`
-4. デプロイ → ウェブアプリ（アクセス: 全員）
-5. 発行 URL を `VITE_GAS_ENDPOINT` に設定
+| 項目 | 状態 |
+|------|------|
+| clasp 新規プロジェクト作成 | ✅ Script ID: `1LHomWbl5Xgjf_k4odLXSttZCG6aKOGqOiTFzdVDKcRRydM0d3c1q30tt` |
+| `clasp push`（code.gs） | ✅ |
+| Web App 初回デプロイ（エディタ） | ⏳ **要手動**（clasp deploy 単体では entryPoints 未設定→404） |
+| `ANTHROPIC_API_KEY` 登録 | ⏳ Script Properties または `setAnthropicApiKey()` 実行 |
+| `VITE_GAS_ENDPOINT` Secret | ⏳ Web App URL 確定後 |
+
+手順詳細: `gas/README.md`  
+完了後の自動化: `node scripts/gas-finish-setup.mjs <WEB_APP_URL>`
 
 ---
 
