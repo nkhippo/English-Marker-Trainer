@@ -4,7 +4,9 @@ export const REASON_CODES = {
   N_NUM_SG: { template: '1つのものなので単数形', allowedTags: ['N-NP'] },
   N_NUM_PL: { template: '複数のものなので -s が必要', allowedTags: ['N-NP'] },
   N_A_PLURAL: { template: 'a は複数形と結合できない', allowedTags: ['N-NP'] },
+  N_ARTICLE_REQUIRED: { template: '可算名詞の単数形には a / the / some などのマーカーが必要', allowedTags: ['N-NP'] },
   N_UNCOUNTABLE: { template: '不可算名詞なので a / -s は付かない', allowedTags: ['N-UNC'] },
+  N_MARKER_MISMATCH: { template: 'some / any / a / the の使い分けが文の極性（肯定・疑問・否定）と合わない', allowedTags: ['N-NP', 'N-UNC'] },
   N_QNT_MISMATCH: { template: '数量詞が可算・不可算と対応していない', allowedTags: ['N-QNT'] },
 
   V_TENSE: { template: '文中の時の表現と時制が合わない', allowedTags: ['V-TA', 'M-AGR'] },

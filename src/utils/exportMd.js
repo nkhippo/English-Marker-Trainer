@@ -19,6 +19,15 @@ export function buildExportMd(set, answers) {
     const tagName = TAGS[item.tag]?.name ?? '不明';
 
     lines.push(`## 問 ${i + 1} [${tagName}] — ${item.sceneTag}`);
+    if (item.headNoun) {
+      const noun = item.headNounJa ? `${item.headNoun}（${item.headNounJa}）` : item.headNoun;
+      const countLabel = item.countability === 'countable'
+        ? '可算名詞'
+        : item.countability === 'uncountable'
+          ? '不可算名詞'
+          : null;
+      lines.push(`語彙: ${noun}${countLabel ? ` — ${countLabel}` : ''}`);
+    }
     if (item.contextEn) lines.push(`Context: ${item.contextEn}`);
     lines.push(`日本語: ${item.ja}`);
     lines.push(`英訳: ${item.template}`);

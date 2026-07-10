@@ -1,6 +1,4 @@
-import { useState } from 'react';
 import { TAGS } from '../constants/tags.js';
-import { C } from '../constants/theme.js';
 import QuestionFeedback from './QuestionFeedback.jsx';
 
 function splitTemplate(template) {
@@ -19,7 +17,6 @@ export default function QuestionScreen({
   onSelect,
   onNext,
 }) {
-  const [choicesOpen, setChoicesOpen] = useState(false);
   const pickedOpt = item.options.find((o) => o.key === picked);
   const correctOpt = item.options.find((o) => o.correct);
   const isCorrect = Boolean(pickedOpt?.correct);
@@ -29,22 +26,22 @@ export default function QuestionScreen({
   const subtitle = `${tagName} · ${item.sceneTag}`;
 
   function choiceStyle(choice) {
-    const base = { border: `1px solid ${C.line}`, background: C.card };
+    const base = { border: `1px solid var(--line)`, background: 'var(--card)' };
     if (!reviewed) return base;
     const isAnswer = choice.key === correctOpt?.key;
     if (isAnswer) {
       return {
-        border: `2px solid ${C.correctBorder}`,
-        background: C.correctBg,
-        color: C.correctText,
+        border: '2px solid var(--correct-border)',
+        background: 'var(--correct-bg)',
+        color: 'var(--correct-text)',
         fontWeight: 600,
       };
     }
     if (choice.key === picked) {
       return {
-        border: `2px solid ${C.wrongBorder}`,
-        background: C.wrongBg,
-        color: C.wrongText,
+        border: '2px solid var(--wrong-border)',
+        background: 'var(--wrong-bg)',
+        color: 'var(--wrong-text)',
         fontWeight: 600,
       };
     }
@@ -78,41 +75,26 @@ export default function QuestionScreen({
           {blankParts.after}
         </p>
 
-        <div className={`choices-accordion${reviewed ? ' choices-accordion--answered' : ''}`}>
-          {!reviewed && (
+        <div className="choices-row">
+          {item.options.map((opt) => (
             <button
+              key={opt.key}
               type="button"
-              className="choices-toggle"
-              onClick={() => setChoicesOpen((open) => !open)}
-              aria-expanded={choicesOpen}
+              className="choice-btn"
+              style={choiceStyle(opt)}
+              onClick={() => onSelect(opt.key)}
+              disabled={reviewed}
             >
-              <span>{choicesOpen ? '選択肢を隠す' : '選択肢を表示する'}</span>
-              <span className="choices-chevron" aria-hidden>{choicesOpen ? '▲' : '▼'}</span>
+              {opt.text}
             </button>
-          )}
-          <div className={`choices-panel${choicesOpen || reviewed ? ' is-open' : ''}`}>
-            <div className="choices-row">
-              {item.options.map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  className="choice-btn"
-                  style={choiceStyle(opt)}
-                  onClick={() => onSelect(opt.key)}
-                  disabled={reviewed || !choicesOpen}
-                >
-                  {opt.text}
-                </button>
-              ))}
-            </div>
-          </div>
+          ))}
         </div>
 
         {reviewed && pickedOpt && correctOpt && (
           <div
             className="question-feedback"
             style={{
-              background: isCorrect ? C.correctBg : C.wrongBg,
+              background: isCorrect ? 'var(--correct-bg)' : 'var(--wrong-bg)',
               borderColor: isCorrect ? '#bbf7d0' : '#fecdd3',
             }}
           >

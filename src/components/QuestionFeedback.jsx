@@ -17,6 +17,33 @@ function OptionNote({ text, why, appliedMeaning }) {
   );
 }
 
+function LexicalNote({ item }) {
+  const parts = [];
+
+  if (item.headNoun) {
+    const label = item.headNounJa ? `${item.headNoun}（${item.headNounJa}）` : item.headNoun;
+    parts.push(`語彙: ${label}`);
+  }
+
+  if (item.countability === 'countable') {
+    parts.push('可算名詞');
+  } else if (item.countability === 'uncountable') {
+    parts.push('不可算名詞');
+  }
+
+  if (item.tag === 'N-QNT' && item.countability) {
+    parts.push(item.countability === 'countable' ? 'many / few が使える語彙' : 'much / little が使える語彙');
+  }
+
+  if (item.baseVerb) {
+    parts.push(`動詞: ${item.baseVerb}`);
+  }
+
+  if (!parts.length) return null;
+
+  return <p className="feedback-lexical-note">{parts.join(' — ')}</p>;
+}
+
 export default function QuestionFeedback({ item, pickedKey, isCorrect }) {
   const picked = item.options.find((o) => o.key === pickedKey);
   const correct = item.options.find((o) => o.correct);
@@ -34,6 +61,8 @@ export default function QuestionFeedback({ item, pickedKey, isCorrect }) {
 
   return (
     <div className="feedback-detail">
+      <LexicalNote item={item} />
+
       <div className="feedback-selected-note">
         <p className="feedback-selected-label">
           <strong>{picked.text}</strong>

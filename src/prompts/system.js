@@ -1,6 +1,7 @@
 import { TAGS, CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
 import { MODAL_POOLS } from '../constants/modalPools.js';
+import { NOUN_GRID_VARIANTS } from '../constants/nounGrids.js';
 import { formatFewShotBlock } from './fewShot.js';
 
 function buildTagDescriptions() {
@@ -13,6 +14,17 @@ function buildReasonCodeList() {
   return Object.entries(REASON_CODES)
     .map(([code, { template, allowedTags }]) => `- ${code}: ${template} [許容タグ: ${allowedTags.join(', ')}]`)
     .join('\n');
+}
+
+function buildNounGridGuide() {
+  return Object.entries(NOUN_GRID_VARIANTS)
+    .map(([tag, variants]) => {
+      const lines = Object.entries(variants).map(([id, spec]) =>
+        `  - ${id}: patterns=${JSON.stringify(spec.patterns)} / ${spec.note ?? spec.label}`,
+      );
+      return `${tag}:\n${lines.join('\n')}`;
+    })
+    .join('\n\n');
 }
 
 export function buildSystemPrompt() {
@@ -40,6 +52,11 @@ export function buildSystemPrompt() {
   "contextEn": "英語文脈 or null（${CONTEXT_REQUIRED_TAGS.join(', ')} は必須）",
   "ja": "日本語文",
   "template": "英訳穴埋め（___ が1箇所・12語以内）",
+  "headNoun": "N-NP / N-UNC / N-QNT では必須。テスト対象の名詞（単数原形）",
+  "headNounJa": "N-NP / N-UNC / N-QNT では必須。headNoun の日本語",
+  "countability": "N-NP / N-UNC / N-QNT では必須。countable または uncountable",
+  "gridVariant": "N-NP / N-UNC では事前指定バリアントID",
+  "gridPatterns": "N-NP / N-UNC では事前指定の4パターン（{n} を headNoun に展開）",
   "baseVerb": "V-MOD-DYN のみ必須",
   "poolUsed": "V-MOD-* のみ。事前指定4語",
   "options": [
@@ -53,6 +70,18 @@ ${buildTagDescriptions()}
 
 ## reasonCode 一覧
 ${buildReasonCodeList()}
+
+## 名詞グリッド（some / any を選択肢に含める）
+template の ___ には名詞句全体（冠詞・some/any を含む）を入れる。some / any / a / the は文脈に応じて**選択肢側**に置き、template に固定で書かない（例: ×Is there any ___? → ○Is there ___? で選択肢に any rice を含める）。
+
+${buildNounGridGuide()}
+
+N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と countability で可算・不可算を明示し、誤答 note に根拠を書く。
+
+## 語彙メタ情報（フィードバック用・必須）
+- N-NP: countability=countable。裸形単数の誤答には N_ARTICLE_REQUIRED を使い、note に「可算名詞の単数形には冠詞が必要」と明記。
+- N-UNC: countability=uncountable。誤答 note に「不可算名詞なので a/-s 不可」と明記。
+- N-QNT: headNoun の可算/不可算に合う数量詞のみ正解。
 
 ## 優先順位規則
 - V_TENSE と M_SEQ_TENSE が両方当てはまる場合、タグが M-SEQ なら M_SEQ_TENSE を優先。
@@ -70,6 +99,7 @@ ${buildReasonCodeList()}
 9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。
 10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。poolUsed の4語を options.text にそのまま使う。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
+12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。
 
 ## 助動詞プール参考
 V-MOD-DYN: ${MODAL_POOLS['V-MOD-DYN'].join(', ')}

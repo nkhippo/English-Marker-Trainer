@@ -4,6 +4,7 @@ import { generateSetFromApi, regenerateItemFromApi } from '../api/claude.js';
 import { allocateTags } from './tagAllocator.js';
 import { allocateScenes } from './sceneAllocator.js';
 import { allocateModalPools } from './poolPicker.js';
+import { allocateNounGrids } from './gridAllocator.js';
 import { validateItem, validateSet, sanitizeItemReasonCodes } from './validators.js';
 import { getPresetName } from '../constants/presets.js';
 import { getOverflowingLemmas, itemUsesLemma } from './lemmaCounter.js';
@@ -19,11 +20,12 @@ function unwrapGeneratedItem(payload) {
   return payload;
 }
 
-function buildMeta(tagAllocation, sceneAllocations, poolAllocations, index) {
+function buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, index) {
   return {
     expectedTag: tagAllocation[index],
     expectedScene: sceneAllocations[index],
     expectedPool: poolAllocations[index],
+    expectedGrid: gridAllocations[index] ?? null,
   };
 }
 
@@ -33,17 +35,19 @@ async function regenerateItemAtIndex({
   tagAllocation,
   sceneAllocations,
   poolAllocations,
+  gridAllocations,
   presetName,
   selectedTags,
   systemBlocks,
   validationErrors,
   avoidLemmas,
 }) {
-  const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, index);
+  const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, index);
   const regenPrompt = buildUserPrompt({
     tagAllocation,
     sceneAllocations,
     poolAllocations,
+    gridAllocations,
     presetName,
     selectedTags,
     singleItem: {
@@ -51,6 +55,7 @@ async function regenerateItemAtIndex({
       tag: meta.expectedTag,
       scene: meta.expectedScene,
       pool: meta.expectedPool,
+      grid: meta.expectedGrid,
     },
     validationErrors,
     avoidLemmas,
@@ -62,6 +67,12 @@ async function regenerateItemAtIndex({
     tag: meta.expectedTag,
     ...meta.expectedScene,
     ...(meta.expectedPool ? { poolUsed: meta.expectedPool } : {}),
+    ...(meta.expectedGrid
+      ? {
+          gridVariant: meta.expectedGrid.variant,
+          gridPatterns: meta.expectedGrid.patterns,
+        }
+      : {}),
   });
   return validateItem(set.items[index], meta);
 }
@@ -71,6 +82,7 @@ export async function generateSet(userConfig) {
   const tagAllocation = allocateTags(selectedTags);
   const sceneAllocations = allocateScenes(10, tagAllocation);
   const poolAllocations = allocateModalPools(tagAllocation);
+  const gridAllocations = allocateNounGrids(tagAllocation);
   const presetName = getPresetName(presetId);
 
   const systemBlocks = buildSystemBlocks();
@@ -78,6 +90,7 @@ export async function generateSet(userConfig) {
     tagAllocation,
     sceneAllocations,
     poolAllocations,
+    gridAllocations,
     presetName,
     selectedTags,
   });
@@ -94,7 +107,7 @@ export async function generateSet(userConfig) {
   };
 
   for (let i = 0; i < 10; i++) {
-    const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, i);
+    const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, i);
     set.items[i] = sanitizeItemReasonCodes(set.items[i]);
     let attempts = 0;
     let { valid, errors } = validateItem(set.items[i], meta);
@@ -106,6 +119,7 @@ export async function generateSet(userConfig) {
         tagAllocation,
         sceneAllocations,
         poolAllocations,
+        gridAllocations,
         presetName,
         selectedTags,
         systemBlocks,
@@ -153,6 +167,7 @@ export async function generateSet(userConfig) {
         tagAllocation,
         sceneAllocations,
         poolAllocations,
+        gridAllocations,
         presetName,
         selectedTags,
         systemBlocks,

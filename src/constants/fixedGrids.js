@@ -1,4 +1,4 @@
-/** 固定グリッド9タグの選択肢テンプレ（要件定義 v0.4 §2.2a） */
+/** 固定グリッド9タグの代表例。名詞タグの some/any バリアントは nounGrids.js を参照 */
 export const FIXED_GRIDS = {
   'N-NP': ['a bookstore', 'the bookstore', 'bookstores', 'the bookstores'],
   'N-UNC': ['water', 'a water', 'waters', 'the water'],

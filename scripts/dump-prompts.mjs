@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { buildSystemPrompt } from '../src/prompts/system.js';
 import { buildUserPrompt } from '../src/prompts/user.js';
 import { ALL_TAG_IDS } from '../src/constants/tags.js';
+import { allocateNounGrids } from '../src/utils/gridAllocator.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, '..', 'prompt-dumps');
@@ -19,8 +20,10 @@ function formatMd(title, text) {
 fs.mkdirSync(OUT, { recursive: true });
 
 const system = buildSystemPrompt();
+const tagAllocation = ALL_TAG_IDS.slice(0, 10);
+const gridAllocations = allocateNounGrids(tagAllocation);
 const sampleUser = buildUserPrompt({
-  tagAllocation: ALL_TAG_IDS.slice(0, 10),
+  tagAllocation,
   sceneAllocations: Array.from({ length: 10 }, (_, i) => ({
     sceneTag: ['買い物', '空港', '教室', '職場', '語学学校', '寮生活', '家庭', 'レストラン', 'キャリア', '旅行'][i],
     functionTag: '情報を得る',
@@ -31,6 +34,7 @@ const sampleUser = buildUserPrompt({
     ['have to', 'must', 'should', 'may'],
     null, null, null,
   ],
+  gridAllocations,
   presetName: 'ミックス診断',
   selectedTags: ALL_TAG_IDS,
 });

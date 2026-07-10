@@ -318,62 +318,13 @@ body {
   font-weight: 600;
 }
 
-/* Choices accordion */
+/* Choices */
 
-.choices-accordion {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-.choices-accordion--answered {
-  border: none;
-}
-
-.choices-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding: 12px 14px;
-  border: none;
-  background: var(--muted-bg);
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  text-align: left;
-}
-
-.choices-chevron {
-  font-size: 10px;
-  color: var(--t2);
-}
-
-.choices-panel {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.25s ease;
-}
-
-.choices-panel.is-open {
-  max-height: 240px;
-}
-
-.choices-accordion--answered .choices-panel {
-  max-height: none;
-  overflow: visible;
-}
-
-.choices-panel .choices-row {
-  padding: 10px 12px 12px;
-}
-
-.choices-row {
+.question-card .choices-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-top: 14px;
 }
 
 .choice-btn {
@@ -449,6 +400,16 @@ body {
   font-size: 12px;
   line-height: 1.7;
   color: var(--t2);
+}
+
+.feedback-lexical-note {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.04);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
 }
 
 .feedback-selected-note,

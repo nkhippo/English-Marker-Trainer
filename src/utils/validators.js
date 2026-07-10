@@ -1,4 +1,5 @@
 import { CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
+import { NOUN_LEXICAL_TAGS } from '../constants/nounGrids.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
 import { containsIdiom } from '../constants/idiomBlocklist.js';
 import { hasLemmaOverflow } from './lemmaCounter.js';
@@ -169,6 +170,16 @@ function validateV16(item) {
   return null;
 }
 
+function validateV17(item) {
+  if (!NOUN_LEXICAL_TAGS.has(item.tag)) return null;
+  if (!item.headNoun) return 'V17: headNoun required';
+  if (!item.headNounJa) return 'V17: headNounJa required';
+  if (!item.countability) return 'V17: countability required';
+  if (item.tag === 'N-NP' && item.countability !== 'countable') return 'V17: N-NP requires countable';
+  if (item.tag === 'N-UNC' && item.countability !== 'uncountable') return 'V17: N-UNC requires uncountable';
+  return null;
+}
+
 const ITEM_VALIDATORS = [
   validateV2,
   validateV3,
@@ -183,6 +194,7 @@ const ITEM_VALIDATORS = [
   validateV14,
   validateV15,
   validateV16,
+  validateV17,
 ];
 
 /**
