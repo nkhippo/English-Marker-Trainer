@@ -222,3 +222,20 @@ export function validateSet(set) {
 export function validateItemQuick(item, meta) {
   return validateItem(item, meta).valid;
 }
+
+/** タグに許可されていない reasonCode を、許可リストの先頭コードへ置換 */
+export function sanitizeItemReasonCodes(item) {
+  const allowedForTag = Object.keys(REASON_CODES).filter(
+    (code) => REASON_CODES[code].allowedTags.includes(item.tag),
+  );
+  if (!allowedForTag.length || !item.options) return item;
+
+  const fallback = allowedForTag[0];
+  let changed = false;
+  const options = item.options.map((opt) => {
+    if (opt.correct || !opt.reasonCode || allowedForTag.includes(opt.reasonCode)) return opt;
+    changed = true;
+    return { ...opt, reasonCode: fallback };
+  });
+  return changed ? { ...item, options } : item;
+}

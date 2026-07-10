@@ -1,3 +1,12 @@
+import { REASON_CODES } from '../constants/reasonCodes.js';
+
+function formatAllowedReasonCodes(tag) {
+  return Object.entries(REASON_CODES)
+    .filter(([, value]) => value.allowedTags.includes(tag))
+    .map(([code, value]) => `- ${code}: ${value.template}`)
+    .join('\n');
+}
+
 /**
  * @param {{
  *   tagAllocation: string[],
@@ -5,7 +14,8 @@
  *   poolAllocations: (string[]|null)[],
  *   presetName: string,
  *   selectedTags: string[],
- *   singleItem?: { id: number, tag: string, scene: object, pool: string[]|null }
+ *   singleItem?: { id: number, tag: string, scene: object, pool: string[]|null },
+ *   validationErrors?: string[],
  * }} params
  */
 export function buildUserPrompt({
@@ -15,6 +25,7 @@ export function buildUserPrompt({
   presetName,
   selectedTags,
   singleItem,
+  validationErrors,
 }) {
   if (singleItem) {
     const { id, tag, scene, pool } = singleItem;
@@ -25,6 +36,9 @@ export function buildUserPrompt({
       `tag: ${tag}`,
       `sceneTag: ${scene.sceneTag}`,
       `functionTag: ${scene.functionTag}`,
+      ``,
+      `このタグで使える reasonCode（誤答のみ。範囲外コードは無効）:`,
+      formatAllowedReasonCodes(tag),
     ];
     if (pool) {
       lines.push(`poolUsed: ${JSON.stringify(pool)}`);
@@ -32,6 +46,10 @@ export function buildUserPrompt({
       if (tag === 'V-MOD-DYN') {
         lines.push(`V-MOD-DYN: baseVerb を場面から選び、全選択肢を動詞句として展開せよ。(bare) は活用形のみ。`);
       }
+    }
+    if (validationErrors?.length) {
+      lines.push('', '前回の検証エラー（必ず修正）:');
+      for (const err of validationErrors) lines.push(`- ${err}`);
     }
     lines.push(`CEFR A1〜B1 語彙・文長制約を厳守。`);
     return lines.join('\n');

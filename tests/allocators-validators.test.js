@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { allocateTags } from '../src/utils/tagAllocator.js';
 import { allocateScenes, countSceneTags } from '../src/utils/sceneAllocator.js';
 import { MOCK_SET } from '../src/constants/mockSet.js';
-import { validateItem, validateV1 } from '../src/utils/validators.js';
+import { validateItem, validateV1, sanitizeItemReasonCodes } from '../src/utils/validators.js';
 
 function modalMeta(tag, pool) {
   return {
@@ -91,5 +91,19 @@ describe('validators', () => {
       modalMeta('V-MOD-DYN', ['(bare)', 'can', 'be able to', 'be going to']),
     );
     assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+  });
+
+  it('sanitizes disallowed reasonCode for tag', () => {
+    const item = sanitizeItemReasonCodes({
+      tag: 'V-VOICE',
+      options: [
+        { key: 'A', text: 'is written', correct: true, reasonCode: null },
+        { key: 'B', text: 'writes', correct: false, reasonCode: 'M_AGR_NUMBER' },
+        { key: 'C', text: 'writing', correct: false, reasonCode: 'V_VOICE' },
+        { key: 'D', text: 'wrote', correct: false, reasonCode: 'V_TENSE' },
+      ],
+    });
+    assert.equal(item.options[1].reasonCode, 'V_VOICE');
+    assert.equal(item.options[3].reasonCode, 'V_VOICE');
   });
 });

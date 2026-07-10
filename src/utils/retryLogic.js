@@ -4,10 +4,10 @@ import { generateSetFromApi, regenerateItemFromApi } from '../api/claude.js';
 import { allocateTags } from './tagAllocator.js';
 import { allocateScenes } from './sceneAllocator.js';
 import { allocateModalPools } from './poolPicker.js';
-import { validateItem, validateSet } from './validators.js';
+import { validateItem, validateSet, sanitizeItemReasonCodes } from './validators.js';
 import { getPresetName } from '../constants/presets.js';
 
-const MAX_RETRIES = 3;
+const MAX_RETRIES = 5;
 
 function unwrapGeneratedItem(payload) {
   if (!payload || typeof payload !== 'object') return payload;
@@ -54,6 +54,7 @@ export async function generateSet(userConfig) {
 
   for (let i = 0; i < 10; i++) {
     const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, i);
+    set.items[i] = sanitizeItemReasonCodes(set.items[i]);
     let attempts = 0;
     let { valid, errors } = validateItem(set.items[i], meta);
 
@@ -70,15 +71,16 @@ export async function generateSet(userConfig) {
           scene: meta.expectedScene,
           pool: meta.expectedPool,
         },
+        validationErrors: errors,
       });
       const item = await regenerateItemFromApi(regenPrompt, systemBlocks);
-      set.items[i] = {
+      set.items[i] = sanitizeItemReasonCodes({
         ...unwrapGeneratedItem(item),
         id: i + 1,
         tag: meta.expectedTag,
         ...meta.expectedScene,
         ...(meta.expectedPool ? { poolUsed: meta.expectedPool } : {}),
-      };
+      });
       ({ valid, errors } = validateItem(set.items[i], meta));
       attempts++;
     }
