@@ -509,19 +509,41 @@ export function validateItemQuick(item, meta) {
   return validateItem(item, meta).valid;
 }
 
-/** タグに許可されていない reasonCode を、許可リストの先頭コードへ置換 */
+const NOTE_MAX_LEN = 40;
+
+function truncateNote(note) {
+  if (typeof note !== 'string' || note.length <= NOTE_MAX_LEN) return note;
+  const sliced = note.slice(0, NOTE_MAX_LEN);
+  const breakAt = Math.max(sliced.lastIndexOf('、'), sliced.lastIndexOf('。'), sliced.lastIndexOf(' '));
+  if (breakAt >= 20) return sliced.slice(0, breakAt).trim();
+  return sliced.trim();
+}
+
+/** reasonCode の範囲外置換 + note の40字超過を切り詰め */
 export function sanitizeItemReasonCodes(item) {
+  if (!item?.options) return item;
+
   const allowedForTag = Object.keys(REASON_CODES).filter(
     (code) => REASON_CODES[code].allowedTags.includes(item.tag),
   );
-  if (!allowedForTag.length || !item.options) return item;
+  const fallback = allowedForTag[0] ?? null;
 
-  const fallback = allowedForTag[0];
   let changed = false;
   const options = item.options.map((opt) => {
-    if (opt.correct || !opt.reasonCode || allowedForTag.includes(opt.reasonCode)) return opt;
-    changed = true;
-    return { ...opt, reasonCode: fallback };
+    let next = opt;
+
+    if (!opt.correct && opt.reasonCode && fallback && !allowedForTag.includes(opt.reasonCode)) {
+      next = { ...next, reasonCode: fallback };
+      changed = true;
+    }
+
+    if (opt.note && opt.note.length > NOTE_MAX_LEN) {
+      next = { ...next, note: truncateNote(opt.note) };
+      changed = true;
+    }
+
+    return next;
   });
+
   return changed ? { ...item, options } : item;
 }

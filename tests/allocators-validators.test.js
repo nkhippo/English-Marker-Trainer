@@ -263,4 +263,38 @@ describe('validators', () => {
     assert.equal(item.options[1].reasonCode, 'V_VOICE');
     assert.equal(item.options[3].reasonCode, 'V_VOICE');
   });
+
+  it('truncates option notes longer than 40 chars', () => {
+    const longNote = 'この選択肢は文脈に合わず、聞き手が別の意味に受け取ってしまうため不適切で使えません';
+    assert.ok(longNote.length > 40);
+    const item = sanitizeItemReasonCodes({
+      tag: 'N-NP',
+      options: [
+        { key: 'A', text: 'a book', correct: true, reasonCode: null, note: null },
+        { key: 'B', text: 'the book', correct: false, reasonCode: 'N_DEF_NEW', note: longNote, appliedMeaning: '別の意味になる' },
+        { key: 'C', text: 'book', correct: false, reasonCode: 'N_MARKER_MISMATCH', note: '短い', appliedMeaning: 'm' },
+        { key: 'D', text: 'books', correct: false, reasonCode: 'N_NUM_SG', note: 'x'.repeat(50), appliedMeaning: 'm' },
+      ],
+    });
+    assert.ok(item.options[1].note.length <= 40);
+    assert.ok(item.options[3].note.length <= 40);
+    const { errors } = validateItem(
+      {
+        ...item,
+        sceneTag: '買い物',
+        functionTag: '情報を得る',
+        contextEn: 'She is looking for a gift.',
+        template: 'I bought ___ yesterday.',
+        headNoun: 'book',
+        headNounJa: '本',
+        countability: 'countable',
+      },
+      {
+        expectedTag: 'N-NP',
+        expectedScene: { sceneTag: '買い物', functionTag: '情報を得る' },
+        expectedPool: null,
+      },
+    );
+    assert.ok(!errors.some((e) => e.startsWith('V4')), errors.join('; '));
+  });
 });
