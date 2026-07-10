@@ -12,6 +12,8 @@ export default function SetupScreen({
   apiConfigured,
 }) {
   const isCustom = presetId === 'custom';
+  const topicPresets = PRESETS.filter((p) => p.id !== 'mix');
+  const mixPreset = PRESETS.find((p) => p.id === 'mix');
   const activeTags = isCustom ? customTags : getTagsForPreset(presetId);
   const tagNames = activeTags.map((t) => TAGS[t].name).join('・');
   const preset = isCustom ? null : getPresetById(presetId);
@@ -28,7 +30,7 @@ export default function SetupScreen({
   return (
     <div className="setup-screen">
       <div className="preset-row">
-        {PRESETS.map((p) => (
+        {topicPresets.map((p) => (
           <button
             key={p.id}
             type="button"
@@ -41,14 +43,24 @@ export default function SetupScreen({
         ))}
       </div>
 
-      <button
-        type="button"
-        className={`mode-card${isCustom ? ' is-active' : ''}`}
-        onClick={() => onPresetChange('custom')}
-      >
-        <div className="mode-card-title">カスタム</div>
-        <div className="mode-card-sub">タグを個別に選択</div>
-      </button>
+      <div className="mode-row">
+        <button
+          type="button"
+          className={`mode-card${presetId === 'mix' ? ' is-active' : ''}`}
+          onClick={() => onPresetChange('mix')}
+        >
+          <div className="mode-card-title">{mixPreset.name}</div>
+          <div className="mode-card-sub">{mixPreset.desc}</div>
+        </button>
+        <button
+          type="button"
+          className={`mode-card${isCustom ? ' is-active' : ''}`}
+          onClick={() => onPresetChange('custom')}
+        >
+          <div className="mode-card-title">カスタム</div>
+          <div className="mode-card-sub">タグを個別に選択</div>
+        </button>
+      </div>
 
       {isCustom && (
         <div className="custom-tags-card">
