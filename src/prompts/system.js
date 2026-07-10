@@ -96,8 +96,8 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 6. template ≤12語、contextEn ≤10語。
 7. V-MOD-DEO は義務・許可用法のみ（must=きっと〜だ の確信用法は禁止）。日本語に「きっと」「確かに」「に違いない」「絶対」を入れない。
 8. appliedMeaning は日本語1文。「〜という意味になる」で締める。誤答をそのまま使ったとき聞き手が受け取る意味を書く。
-9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。
-10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。poolUsed の4語を options.text にそのまま使う。
+9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。options の lemma 集合は poolUsed と完全一致必須（can / be able to / be going to 等。able to・going to と略さない）。
+10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
 12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。
 

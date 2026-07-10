@@ -37,8 +37,8 @@ export function buildUserPrompt({
     .filter((a) => a.poolUsed)
     .map((a) => {
       const extra = a.tag === 'V-MOD-DYN'
-        ? ' baseVerb は場面から選び、動詞句全体として4択を構成。'
-        : ' この4つの中から正解を1つ選び、残り3つを誤答として配置。';
+        ? ' baseVerb は場面から選び、動詞句全体として4択を構成。options の lemma は poolUsed と完全一致（順不同）。プール外禁止。'
+        : ' この4つの中から正解を1つ選び、残り3つを誤答として配置。options の lemma は poolUsed と完全一致（順不同）。プール外禁止。';
       return `問${a.id} (${a.tag}): poolUsed=${JSON.stringify(a.poolUsed)}.${extra}`;
     })
     .join('\n');

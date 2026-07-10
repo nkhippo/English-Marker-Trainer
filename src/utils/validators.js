@@ -3,9 +3,38 @@ import { NOUN_LEXICAL_TAGS } from '../constants/nounGrids.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
 import { containsIdiom } from '../constants/idiomBlocklist.js';
 import { hasLemmaOverflow } from './lemmaCounter.js';
+import { expandModalOption } from './poolPicker.js';
 
 const MODAL_TAGS = new Set(['V-MOD-DYN', 'V-MOD-DEO']);
 const EPISTEMIC_JA = /きっと|確かに|に違いない|絶対/;
+
+const DEO_LEMMA_MAP = {
+  'has to': 'have to',
+  'needs to': 'need to',
+  'is allowed to': 'be allowed to',
+  'are allowed to': 'be allowed to',
+  'was allowed to': 'be allowed to',
+  'were allowed to': 'be allowed to',
+  'allowed to': 'be allowed to',
+  'is supposed to': 'be supposed to',
+  'are supposed to': 'be supposed to',
+  'was supposed to': 'be supposed to',
+  'were supposed to': 'be supposed to',
+  'supposed to': 'be supposed to',
+};
+
+const DYN_MODAL_LEMMA_MAP = {
+  'is able to': 'be able to',
+  'are able to': 'be able to',
+  'was able to': 'be able to',
+  'were able to': 'be able to',
+  'able to': 'be able to',
+  'is going to': 'be going to',
+  'are going to': 'be going to',
+  'was going to': 'be going to',
+  'were going to': 'be going to',
+  'going to': 'be going to',
+};
 
 function wordCount(text) {
   if (!text) return 0;
@@ -16,44 +45,156 @@ function sortedTexts(options) {
   return options.map((o) => o.text).sort();
 }
 
-/** V-MOD-DEO: 三人称などの活用形をプールの原形に戻す */
-function modalLemmaFromDeoOption(text) {
+function looksLikeBaseVerbForm(text, baseVerb) {
   const t = text.trim().toLowerCase();
-  const map = {
-    'has to': 'have to',
-    'needs to': 'need to',
-    'is allowed to': 'be allowed to',
-    'is supposed to': 'be supposed to',
-  };
-  return map[t] ?? t;
+  const bv = baseVerb.toLowerCase();
+  if (t === bv) return true;
+  if (t === `${bv}s` || t === `${bv}es`) return true;
+  if (bv.endsWith('y') && t === `${bv.slice(0, -1)}ies`) return true;
+  if (t === `${bv}ed` || t === `${bv}d`) return true;
+  if (t === `${bv}ing`) return true;
+  // phrasal: "wakes up" for baseVerb "wake up"
+  if (bv.includes(' ')) {
+    const [head, ...rest] = bv.split(' ');
+    const tail = rest.join(' ');
+    if (t === `${head}s ${tail}` || t === `${head}es ${tail}`) return true;
+    if (t === `${head}ed ${tail}` || t === `${head}ing ${tail}`) return true;
+  }
+  return false;
+}
+
+/** V-MOD-DEO: 三人称などの活用形をプールの原形に戻す */
+export function modalLemmaFromDeoOption(text) {
+  const t = text.trim().toLowerCase();
+  return DEO_LEMMA_MAP[t] ?? t;
 }
 
 /** V-MOD-DYN: 選択肢テキストからプール候補（原形）を抽出 */
-function modalLemmaFromDynOption(optionText, baseVerb) {
+export function modalLemmaFromDynOption(optionText, baseVerb) {
   const text = optionText.trim().toLowerCase();
-  const bv = baseVerb.toLowerCase();
+  const bv = (baseVerb || '').toLowerCase();
+  if (!bv) return text;
 
-  if (!text.includes(' ')) {
-    return '(bare)';
-  }
+  if (looksLikeBaseVerbForm(text, bv)) return '(bare)';
 
   let modalPart;
   if (text.endsWith(` ${bv}`)) {
     modalPart = text.slice(0, -(bv.length + 1)).trim();
+  } else if (!text.includes(' ')) {
+    return '(bare)';
   } else {
     const parts = text.split(' ');
     modalPart = parts.slice(0, -1).join(' ');
   }
 
   if (!modalPart) return '(bare)';
+  return DYN_MODAL_LEMMA_MAP[modalPart] ?? modalPart;
+}
 
-  const conjugations = {
-    'is able to': 'be able to',
-    'are able to': 'be able to',
-    'is going to': 'be going to',
-    'are going to': 'be going to',
-  };
-  return conjugations[modalPart] ?? modalPart;
+/**
+ * モデルが返す表層ゆれを、事前抽選 pool に揃える。
+ * 正解 lemma が expectedPool に含まれる場合のみ書き換え、そうでなければそのまま返す。
+ */
+export function sanitizeModalPoolOptions(item, expectedPool) {
+  if (!item || !MODAL_TAGS.has(item.tag) || !expectedPool?.length || !item.options?.length) {
+    return item;
+  }
+
+  const expected = expectedPool.map((t) => t.trim().toLowerCase());
+  const options = item.options;
+
+  if (item.tag === 'V-MOD-DEO') {
+    const lemmas = options.map((o) => modalLemmaFromDeoOption(o.text));
+    if (poolSetsMatch(lemmas, expected)) {
+      // 表層は許容（has to 等）。poolUsed だけ正規化
+      return { ...item, poolUsed: [...expectedPool] };
+    }
+
+    const correct = options.find((o) => o.correct);
+    const correctLemma = correct ? modalLemmaFromDeoOption(correct.text) : null;
+    if (!correctLemma || !expected.includes(correctLemma)) return item;
+
+    const byLemma = new Map();
+    for (const opt of options) {
+      byLemma.set(modalLemmaFromDeoOption(opt.text), opt);
+    }
+
+    const rebuilt = expectedPool.map((lemma, i) => {
+      const key = String.fromCharCode(65 + i);
+      const prev = byLemma.get(lemma.toLowerCase());
+      const isCorrect = lemma.toLowerCase() === correctLemma;
+      if (prev) {
+        return {
+          ...prev,
+          key,
+          text: prev.text,
+          correct: isCorrect,
+          reasonCode: isCorrect ? null : prev.reasonCode,
+          note: isCorrect ? null : prev.note,
+          appliedMeaning: isCorrect ? null : prev.appliedMeaning,
+        };
+      }
+      return {
+        key,
+        text: lemma,
+        correct: isCorrect,
+        reasonCode: isCorrect ? null : 'V_MOD_SENSE_MISMATCH',
+        note: isCorrect ? null : 'プール外の候補を置換',
+        appliedMeaning: isCorrect ? null : '別の助動詞の意味になる',
+      };
+    });
+
+    return { ...item, poolUsed: [...expectedPool], options: rebuilt };
+  }
+
+  // V-MOD-DYN
+  if (!item.baseVerb) return item;
+  const lemmas = options.map((o) => modalLemmaFromDynOption(o.text, item.baseVerb));
+  if (poolSetsMatch(lemmas, expected)) {
+    return { ...item, poolUsed: [...expectedPool] };
+  }
+
+  const correct = options.find((o) => o.correct);
+  const correctLemma = correct
+    ? modalLemmaFromDynOption(correct.text, item.baseVerb)
+    : null;
+  if (!correctLemma || !expected.includes(correctLemma)) return item;
+
+  const byLemma = new Map();
+  for (const opt of options) {
+    byLemma.set(modalLemmaFromDynOption(opt.text, item.baseVerb), opt);
+  }
+
+  const rebuilt = expectedPool.map((lemma, i) => {
+    const key = String.fromCharCode(65 + i);
+    const prev = byLemma.get(lemma.toLowerCase());
+    const isCorrect = lemma.toLowerCase() === correctLemma;
+    const text = prev?.text && modalLemmaFromDynOption(prev.text, item.baseVerb) === lemma.toLowerCase()
+      ? prev.text
+      : expandModalOption('V-MOD-DYN', lemma, item.baseVerb);
+
+    if (prev) {
+      return {
+        ...prev,
+        key,
+        text,
+        correct: isCorrect,
+        reasonCode: isCorrect ? null : prev.reasonCode,
+        note: isCorrect ? null : prev.note,
+        appliedMeaning: isCorrect ? null : prev.appliedMeaning,
+      };
+    }
+    return {
+      key,
+      text,
+      correct: isCorrect,
+      reasonCode: isCorrect ? null : 'V_MOD_SENSE_MISMATCH',
+      note: isCorrect ? null : 'プール外の候補を置換',
+      appliedMeaning: isCorrect ? null : '別の助動詞の意味になる',
+    };
+  });
+
+  return { ...item, poolUsed: [...expectedPool], options: rebuilt };
 }
 
 function poolSetsMatch(actual, expected) {

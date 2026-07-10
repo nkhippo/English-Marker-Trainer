@@ -5,7 +5,7 @@ import { allocateTags } from './tagAllocator.js';
 import { allocateScenes } from './sceneAllocator.js';
 import { allocateModalPools } from './poolPicker.js';
 import { allocateNounGrids } from './gridAllocator.js';
-import { validateItem, validateSet, sanitizeItemReasonCodes } from './validators.js';
+import { validateItem, validateSet, sanitizeItemReasonCodes, sanitizeModalPoolOptions } from './validators.js';
 import { getPresetName } from '../constants/presets.js';
 
 function buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, index) {
@@ -48,8 +48,10 @@ export async function generateSet(userConfig) {
 
   for (let i = 0; i < 10; i++) {
     const meta = buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, i);
-    set.items[i] = sanitizeItemReasonCodes(set.items[i]);
-    const { valid, errors } = validateItem(set.items[i], meta);
+    let item = sanitizeItemReasonCodes(set.items[i]);
+    item = sanitizeModalPoolOptions(item, meta.expectedPool);
+    set.items[i] = item;
+    const { valid, errors } = validateItem(item, meta);
     if (!valid) {
       throw new Error(`問${i + 1}の生成に失敗しました: ${errors.join('; ')}`);
     }

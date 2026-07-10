@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { allocateTags } from '../src/utils/tagAllocator.js';
 import { allocateScenes, countSceneTags } from '../src/utils/sceneAllocator.js';
 import { MOCK_SET } from '../src/constants/mockSet.js';
-import { validateItem, validateV1, sanitizeItemReasonCodes, validateSet } from '../src/utils/validators.js';
+import { validateItem, validateV1, sanitizeItemReasonCodes, sanitizeModalPoolOptions, validateSet } from '../src/utils/validators.js';
 import { hasLemmaOverflow } from '../src/utils/lemmaCounter.js';
 
 function modalMeta(tag, pool) {
@@ -94,6 +94,66 @@ describe('validators', () => {
       modalMeta('V-MOD-DYN', ['(bare)', 'can', 'be able to', 'be going to']),
     );
     assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+  });
+
+  it('accepts abbreviated able to / going to lemmas for V-MOD-DYN', () => {
+    const item = {
+      tag: 'V-MOD-DYN',
+      sceneTag: '教室',
+      functionTag: '情報を得る',
+      template: 'She ___ the homework tonight.',
+      baseVerb: 'finish',
+      options: [
+        { key: 'A', text: 'finishes', correct: true },
+        { key: 'B', text: 'can finish', correct: false },
+        { key: 'C', text: 'able to finish', correct: false },
+        { key: 'D', text: 'going to finish', correct: false },
+      ],
+    };
+    const { errors } = validateItem(
+      item,
+      modalMeta('V-MOD-DYN', ['(bare)', 'can', 'be able to', 'be going to']),
+    );
+    assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+  });
+
+  it('sanitizes V-MOD-DYN options back onto expected pool', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DYN',
+        baseVerb: 'finish',
+        options: [
+          { key: 'A', text: 'finishes', correct: true, reasonCode: null },
+          { key: 'B', text: 'can finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'must finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'should finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['(bare)', 'can', 'will', 'may'],
+    );
+    const { errors } = validateItem(item, modalMeta('V-MOD-DYN', ['(bare)', 'can', 'will', 'may']));
+    assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+    assert.equal(item.options.filter((o) => o.correct).length, 1);
+    assert.equal(item.options.find((o) => o.correct).text, 'finishes');
+  });
+
+  it('sanitizes V-MOD-DEO options back onto expected pool', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DEO',
+        options: [
+          { key: 'A', text: 'has to', correct: true, reasonCode: null },
+          { key: 'B', text: 'must', correct: false, reasonCode: 'V_MOD_SOURCE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'can', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'will', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['have to', 'must', 'should', 'may'],
+    );
+    const { errors } = validateItem(item, modalMeta('V-MOD-DEO', ['have to', 'must', 'should', 'may']));
+    assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+    assert.ok(item.options.some((o) => o.text === 'should'));
+    assert.ok(item.options.some((o) => o.text === 'may'));
   });
 
   it('sanitizes disallowed reasonCode for tag', () => {
