@@ -16,6 +16,7 @@ function formatAllowedReasonCodes(tag) {
  *   selectedTags: string[],
  *   singleItem?: { id: number, tag: string, scene: object, pool: string[]|null },
  *   validationErrors?: string[],
+ *   avoidLemmas?: string[],
  * }} params
  */
 export function buildUserPrompt({
@@ -26,6 +27,7 @@ export function buildUserPrompt({
   selectedTags,
   singleItem,
   validationErrors,
+  avoidLemmas,
 }) {
   if (singleItem) {
     const { id, tag, scene, pool } = singleItem;
@@ -50,6 +52,9 @@ export function buildUserPrompt({
     if (validationErrors?.length) {
       lines.push('', '前回の検証エラー（必ず修正）:');
       for (const err of validationErrors) lines.push(`- ${err}`);
+    }
+    if (avoidLemmas?.length) {
+      lines.push('', `次の語彙（lemma）はセット内で使いすぎなので、この問では避けること: ${avoidLemmas.join(', ')}`);
     }
     lines.push(`CEFR A1〜B1 語彙・文長制約を厳守。`);
     return lines.join('\n');

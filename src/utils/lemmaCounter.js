@@ -57,3 +57,17 @@ export function hasLemmaOverflow(items, maxCount = 2) {
   const freq = countLemmaFrequencies(items);
   return Object.values(freq).some((n) => n > maxCount);
 }
+
+export function getOverflowingLemmas(items, maxCount = 2) {
+  const freq = countLemmaFrequencies(items);
+  return Object.keys(freq).filter((lemma) => freq[lemma] > maxCount);
+}
+
+export function itemUsesLemma(item, targetLemma) {
+  const texts = [
+    item.template,
+    item.contextEn,
+    ...(item.options?.map((o) => o.text) ?? []),
+  ].filter(Boolean);
+  return texts.some((text) => extractContentLemmas(text).includes(targetLemma));
+}
