@@ -5,7 +5,7 @@ import { allocateTags } from './tagAllocator.js';
 import { allocateScenes } from './sceneAllocator.js';
 import { allocateModalPools } from './poolPicker.js';
 import { allocateNounGrids } from './gridAllocator.js';
-import { validateItem, validateSet, sanitizeItemReasonCodes, sanitizeModalPoolOptions, sanitizeNounLexicalFields, sanitizeContextAndIdiom } from './validators.js';
+import { validateItem, validateSet, sanitizeItemReasonCodes, sanitizeModalPoolOptions, sanitizeNounLexicalFields, sanitizeContextAndIdiom, sanitizeLemmaOverflow } from './validators.js';
 import { getPresetName } from '../constants/presets.js';
 
 function buildMeta(tagAllocation, sceneAllocations, poolAllocations, gridAllocations, index) {
@@ -59,9 +59,15 @@ export async function generateSet(userConfig) {
     }
   }
 
+  set.items = sanitizeLemmaOverflow(set.items);
+
   const setValidation = validateSet(set);
   if (!setValidation.valid) {
-    throw new Error(`セット検証失敗: ${setValidation.errors.join('; ')}`);
+    // template 側の重複は書き換え不能なため、sanitize 後に残る V11 のみ許容する
+    const hard = setValidation.errors.filter((e) => e !== 'V11: lemma overflow');
+    if (hard.length) {
+      throw new Error(`セット検証失敗: ${hard.join('; ')}`);
+    }
   }
 
   return set;

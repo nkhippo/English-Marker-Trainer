@@ -2,8 +2,15 @@ import { CONTEXT_REQUIRED_TAGS } from '../constants/tags.js';
 import { NOUN_LEXICAL_TAGS } from '../constants/nounGrids.js';
 import { REASON_CODES } from '../constants/reasonCodes.js';
 import { containsIdiom, rewriteIdiomTemplate } from '../constants/idiomBlocklist.js';
-import { fallbackContextEn } from '../constants/sceneContexts.js';
-import { hasLemmaOverflow } from './lemmaCounter.js';
+import { fallbackContextEn, allFallbackContexts } from '../constants/sceneContexts.js';
+import {
+  hasLemmaOverflow,
+  getOverflowingLemmas,
+  contextUsesLemma,
+  countLemmaFrequencies,
+  extractContentLemmas,
+  itemContentLemmas,
+} from './lemmaCounter.js';
 import { expandModalOption } from './poolPicker.js';
 import { lookupHeadNounJa } from '../constants/headNounJa.js';
 
@@ -291,6 +298,77 @@ export function sanitizeContextAndIdiom(item, expectedScene = null) {
   }
 
   return changed ? next : item;
+}
+
+/**
+ * V11: contextEn を差し替えて lemma 重複を解消する（template は触らない）。
+ */
+export function sanitizeLemmaOverflow(items, maxCount = 2) {
+  if (!Array.isArray(items) || !items.length) return items;
+  if (!hasLemmaOverflow(items, maxCount)) return items;
+
+  const pool = allFallbackContexts();
+  let next = items.map((item) => ({ ...item }));
+
+  for (let pass = 0; pass < 8; pass++) {
+    const overflowing = getOverflowingLemmas(next, maxCount);
+    if (!overflowing.length) return next;
+
+    let changed = false;
+    for (const lm of overflowing) {
+      const idxs = [];
+      for (let i = 0; i < next.length; i++) {
+        if (contextUsesLemma(next[i], lm)) idxs.push(i);
+      }
+      // contextEn 側の余剰から潰す（先頭 maxCount 問は残す）
+      for (const i of idxs.slice(maxCount)) {
+        const replacement = pickContextAvoiding(next, i, pool, maxCount);
+        if (replacement && replacement !== next[i].contextEn) {
+          next[i] = { ...next[i], contextEn: replacement };
+          changed = true;
+        }
+      }
+    }
+
+    if (!changed) break;
+  }
+
+  return next;
+}
+
+function pickContextAvoiding(items, index, pool, maxCount) {
+  const others = items.filter((_, i) => i !== index);
+  const baseFreq = countLemmaFrequencies(others);
+
+  let best = null;
+  let bestScore = Infinity;
+  for (const candidate of pool) {
+    const lemmas = extractContentLemmas(candidate);
+    let score = 0;
+    let ok = true;
+    for (const lm of lemmas) {
+      const nextCount = (baseFreq[lm] ?? 0) + 1;
+      if (nextCount > maxCount) {
+        ok = false;
+        break;
+      }
+      score += nextCount;
+    }
+    // template 側の lemma とも衝突しすぎない
+    const templateLemmas = itemContentLemmas({
+      template: items[index].template,
+      contextEn: null,
+    });
+    for (const lm of lemmas) {
+      if (templateLemmas.has(lm)) score += 2;
+    }
+    if (!ok) continue;
+    if (score < bestScore) {
+      bestScore = score;
+      best = candidate;
+    }
+  }
+  return best;
 }
 
 function pickNonEmpty(...values) {

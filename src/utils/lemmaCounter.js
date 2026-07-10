@@ -34,15 +34,21 @@ export function extractContentLemmas(text) {
     .map(lemma);
 }
 
+/** 1問あたり各 lemma は1回だけカウント（セット横断の語彙重複を見る） */
+export function itemContentLemmas(item) {
+  const texts = [item.template, item.contextEn].filter(Boolean);
+  const set = new Set();
+  for (const text of texts) {
+    for (const lm of extractContentLemmas(text)) set.add(lm);
+  }
+  return set;
+}
+
 export function countLemmaFrequencies(items) {
   const freq = {};
   for (const item of items) {
-    const texts = [item.template, item.contextEn].filter(Boolean);
-
-    for (const text of texts) {
-      for (const lm of extractContentLemmas(text)) {
-        freq[lm] = (freq[lm] ?? 0) + 1;
-      }
+    for (const lm of itemContentLemmas(item)) {
+      freq[lm] = (freq[lm] ?? 0) + 1;
     }
   }
   return freq;
@@ -55,10 +61,14 @@ export function hasLemmaOverflow(items, maxCount = 2) {
 
 export function getOverflowingLemmas(items, maxCount = 2) {
   const freq = countLemmaFrequencies(items);
-  return Object.keys(freq).filter((lemma) => freq[lemma] > maxCount);
+  return Object.keys(freq).filter((lm) => freq[lm] > maxCount);
 }
 
 export function itemUsesLemma(item, targetLemma) {
-  const texts = [item.template, item.contextEn].filter(Boolean);
-  return texts.some((text) => extractContentLemmas(text).includes(targetLemma));
+  return itemContentLemmas(item).has(targetLemma);
+}
+
+export function contextUsesLemma(item, targetLemma) {
+  if (!item.contextEn) return false;
+  return extractContentLemmas(item.contextEn).includes(targetLemma);
 }

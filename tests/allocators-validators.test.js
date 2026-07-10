@@ -10,9 +10,10 @@ import {
   sanitizeModalPoolOptions,
   sanitizeNounLexicalFields,
   sanitizeContextAndIdiom,
+  sanitizeLemmaOverflow,
   validateSet,
 } from '../src/utils/validators.js';
-import { hasLemmaOverflow } from '../src/utils/lemmaCounter.js';
+import { hasLemmaOverflow, getOverflowingLemmas } from '../src/utils/lemmaCounter.js';
 import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
 
 function modalMeta(tag, pool) {
@@ -296,5 +297,19 @@ describe('validators', () => {
       },
     );
     assert.ok(!errors.some((e) => e.startsWith('V4')), errors.join('; '));
+  });
+
+  it('resolves lemma overflow by rewriting contextEn', () => {
+    const items = [
+      { template: 'I need ___ now.', contextEn: 'They are talking in the dorm.' },
+      { template: 'She buys ___ today.', contextEn: 'They are talking at the office.' },
+      { template: 'We see ___ here.', contextEn: 'They are talking at home today.' },
+      { template: 'He finds ___ there.', contextEn: 'They are talking about work plans.' },
+    ];
+    assert.ok(hasLemmaOverflow(items));
+    assert.ok(getOverflowingLemmas(items).includes('talk'));
+    const fixed = sanitizeLemmaOverflow(items);
+    assert.equal(hasLemmaOverflow(fixed), false);
+    assert.deepEqual(getOverflowingLemmas(fixed), []);
   });
 });
