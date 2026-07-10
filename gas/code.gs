@@ -45,6 +45,15 @@ function doPost(e) {
   return ContentService.createTextOutput(text).setMimeType(ContentService.MimeType.JSON);
 }
 
+/** ヘルスチェック（デプロイ確認用） */
+function doGet() {
+  return ContentService.createTextOutput(JSON.stringify({
+    ok: true,
+    service: 'english-marker-trainer-gas',
+    hasApiKey: Boolean(PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY')),
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
 function doOptions() {
   return ContentService.createTextOutput('')
     .setMimeType(ContentService.MimeType.TEXT);
@@ -54,4 +63,19 @@ function jsonResponse(obj, status) {
   const output = ContentService.createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
   return output;
+}
+
+/** clasp run 用: Script Properties に API キーを登録（初回セットアップのみ） */
+function setAnthropicApiKey(key) {
+  if (!key || String(key).length < 20) {
+    throw new Error('Invalid API key');
+  }
+  PropertiesService.getScriptProperties().setProperty('ANTHROPIC_API_KEY', String(key));
+  return { ok: true, length: String(key).length };
+}
+
+/** clasp run 用: API キー登録確認 */
+function hasAnthropicApiKey() {
+  const key = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
+  return { set: Boolean(key), length: key ? key.length : 0 };
 }

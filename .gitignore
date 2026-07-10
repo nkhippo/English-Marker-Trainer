@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+.clasp.json
+gas/code.gs.bak
 
 # Editor directories and files
 .vscode/*
