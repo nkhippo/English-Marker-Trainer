@@ -87,7 +87,7 @@
 | タグ | グリッド例 | 直積の軸 |
 |------|-----------|---------|
 | `N-NP` | a bookstore / the bookstore / bookstores / the bookstores | 数 × 限定性 |
-| `N-UNC` | water / a water / waters / the water | 可算性 × 限定性 |
+| `N-UNC` | water / a water / waters / the water（たまに a cup of water 等の単位表現） | 可算性 × 限定性（＋単位） |
 | `N-QNT` | many / much / few / little | 可算性 × 量の多寡 |
 | `V-TA` | played / was playing / has played / had played | 時制 × 相 |
 | `V-VOICE` | wrote / was written / was writing / has written | 態 × 相 |

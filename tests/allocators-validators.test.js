@@ -2,6 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { allocateTags } from '../src/utils/tagAllocator.js';
 import { allocateScenes, countSceneTags } from '../src/utils/sceneAllocator.js';
+import { allocateNounGrids, pickWeightedVariant } from '../src/utils/gridAllocator.js';
+import { NOUN_GRID_VARIANTS } from '../src/constants/nounGrids.js';
 import { MOCK_SET } from '../src/constants/mockSet.js';
 import {
   validateItem,
@@ -46,6 +48,28 @@ describe('allocateScenes', () => {
       const counts = countSceneTags(alloc);
       for (const c of Object.values(counts)) assert.ok(c <= 2);
     }
+  });
+});
+
+describe('allocateNounGrids', () => {
+  it('includes unit-of patterns for N-UNC when selected', () => {
+    const alloc = allocateNounGrids(['N-UNC'], () => 0.99);
+    assert.equal(alloc[0].variant, 'unit-of');
+    assert.deepEqual(alloc[0].patterns, ['{n}', 'a {n}', 'a cup of {n}', 'the {n}']);
+    assert.equal(alloc[0].countability, 'uncountable');
+  });
+
+  it('picks unit-of less often than other N-UNC variants', () => {
+    const variants = NOUN_GRID_VARIANTS['N-UNC'];
+    const counts = { 'article-bare': 0, 'some-any': 0, 'unit-of': 0 };
+    const n = 5000;
+    for (let i = 0; i < n; i++) {
+      const picked = pickWeightedVariant(variants, Math.random);
+      counts[picked.id] += 1;
+    }
+    assert.ok(counts['unit-of'] / n < 0.28, `unit-of rate=${counts['unit-of'] / n}`);
+    assert.ok(counts['article-bare'] / n > 0.3, `article-bare rate=${counts['article-bare'] / n}`);
+    assert.ok(counts['some-any'] / n > 0.3, `some-any rate=${counts['some-any'] / n}`);
   });
 });
 
@@ -191,6 +215,27 @@ describe('validators', () => {
       expectedPool: null,
     });
     assert.ok(!errors.some((e) => e.startsWith('V17')), errors.join('; '));
+  });
+
+  it('infers headNoun from unit-of options like a cup of tea', () => {
+    const item = sanitizeNounLexicalFields(
+      {
+        tag: 'N-UNC',
+        sceneTag: '家庭',
+        functionTag: '申し出る',
+        template: 'I can make ___ for you.',
+        options: [
+          { key: 'A', text: 'a cup of tea', correct: true },
+          { key: 'B', text: 'tea', correct: false, reasonCode: 'N_UNIT_OF', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'a tea', correct: false, reasonCode: 'N_UNCOUNTABLE', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'the tea', correct: false, reasonCode: 'N_DEF_NEW', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      { countability: 'uncountable' },
+    );
+    assert.equal(item.headNoun, 'tea');
+    assert.equal(item.headNounJa, 'お茶');
+    assert.equal(item.countability, 'uncountable');
   });
 
   it('allows noun items without headNounJa after sanitize attempt', () => {

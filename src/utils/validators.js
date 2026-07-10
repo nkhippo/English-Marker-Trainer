@@ -386,7 +386,7 @@ function inferCountabilityFromQnt(item) {
   return null;
 }
 
-/** N-NP / N-UNC の選択肢から headNoun を推定（a book / some water など） */
+/** N-NP / N-UNC の選択肢から headNoun を推定（a book / some water / a cup of tea など） */
 function inferHeadNounFromOptions(item) {
   const texts = (item.options ?? []).map((o) => o.text?.trim().toLowerCase()).filter(Boolean);
   if (texts.length < 2) return null;
@@ -394,6 +394,7 @@ function inferHeadNounFromOptions(item) {
   const stripped = texts.map((t) =>
     t
       .replace(/^(a|an|the|some|any)\s+/i, '')
+      .replace(/^(cups?|glasses?|bowls?|pieces?|bottles?|slices?|loaves|loaf|bits?|pairs?)\s+of\s+/i, '')
       .replace(/'s$/i, '')
       .trim(),
   );

@@ -80,7 +80,7 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 
 ## 語彙メタ情報（フィードバック用・必須）
 - N-NP: countability=countable。裸形単数の誤答には N_ARTICLE_REQUIRED を使い、note に「可算名詞の単数形には冠詞が必要」と明記。
-- N-UNC: countability=uncountable。誤答 note に「不可算名詞なので a/-s 不可」と明記。
+- N-UNC: countability=uncountable。誤答 note に「不可算名詞なので a/-s 不可」と明記。unit-of バリアントでは単位表現（a cup of tea 等）の要否も N_UNIT_OF で説明する。
 - N-QNT: headNoun の可算/不可算に合う数量詞のみ正解。
 
 ## 優先順位規則
@@ -99,7 +99,7 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。options の lemma 集合は poolUsed と完全一致必須（can / be able to / be going to 等。able to・going to と略さない）。
 10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
-12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。
+12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。a cup of {n} の cup は headNoun に合う単位（glass/bowl/piece/bottle/slice 等）へ置き換えてよい。
 
 ## 助動詞プール参考
 V-MOD-DYN: ${MODAL_POOLS['V-MOD-DYN'].join(', ')}

@@ -6,6 +6,7 @@ export const REASON_CODES = {
   N_A_PLURAL: { template: 'a は複数形と結合できない', allowedTags: ['N-NP'] },
   N_ARTICLE_REQUIRED: { template: '可算名詞の単数形には a / the / some などのマーカーが必要', allowedTags: ['N-NP'] },
   N_UNCOUNTABLE: { template: '不可算名詞なので a / -s は付かない', allowedTags: ['N-UNC'] },
+  N_UNIT_OF: { template: '不可算名詞の単位表現（a cup/glass/piece of など）の要否が文脈と合わない', allowedTags: ['N-UNC'] },
   N_MARKER_MISMATCH: { template: 'some / any / a / the の使い分けが文の極性（肯定・疑問・否定）と合わない', allowedTags: ['N-NP', 'N-UNC'] },
   N_QNT_MISMATCH: { template: '数量詞が可算・不可算と対応していない', allowedTags: ['N-QNT'] },
 
