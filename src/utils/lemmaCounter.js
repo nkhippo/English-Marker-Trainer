@@ -37,12 +37,7 @@ export function extractContentLemmas(text) {
 export function countLemmaFrequencies(items) {
   const freq = {};
   for (const item of items) {
-    const texts = [
-      item.template,
-      item.contextEn,
-      item.ja,
-      ...(item.options?.map((o) => o.text) ?? []),
-    ].filter(Boolean);
+    const texts = [item.template, item.contextEn].filter(Boolean);
 
     for (const text of texts) {
       for (const lm of extractContentLemmas(text)) {
@@ -64,10 +59,6 @@ export function getOverflowingLemmas(items, maxCount = 2) {
 }
 
 export function itemUsesLemma(item, targetLemma) {
-  const texts = [
-    item.template,
-    item.contextEn,
-    ...(item.options?.map((o) => o.text) ?? []),
-  ].filter(Boolean);
+  const texts = [item.template, item.contextEn].filter(Boolean);
   return texts.some((text) => extractContentLemmas(text).includes(targetLemma));
 }

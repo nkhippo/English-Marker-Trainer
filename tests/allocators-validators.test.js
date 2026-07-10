@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { allocateTags } from '../src/utils/tagAllocator.js';
 import { allocateScenes, countSceneTags } from '../src/utils/sceneAllocator.js';
 import { MOCK_SET } from '../src/constants/mockSet.js';
-import { validateItem, validateV1, sanitizeItemReasonCodes } from '../src/utils/validators.js';
+import { validateItem, validateV1, sanitizeItemReasonCodes, validateSet } from '../src/utils/validators.js';
+import { hasLemmaOverflow } from '../src/utils/lemmaCounter.js';
 
 function modalMeta(tag, pool) {
   return {
@@ -50,6 +51,8 @@ describe('validators', () => {
       assert.ok(valid, errors.join('; '));
     });
     assert.equal(validateV1(MOCK_SET), null);
+    assert.equal(hasLemmaOverflow(MOCK_SET.items), false);
+    assert.equal(validateSet(MOCK_SET).valid, true);
   });
 
   it('accepts V-MOD-DEO conjugated pool options', () => {
