@@ -9,6 +9,7 @@ import { MOCK_SET } from './constants/mockSet.js';
 import { DEFAULT_PRESET_ID, getTagsForPreset } from './constants/presets.js';
 import { isApiConfigured } from './api/claude.js';
 import { generateSet } from './utils/retryLogic.js';
+import { shuffleSetOptions } from './utils/shuffleOptions.js';
 import './App.css';
 
 function scrollToTop() {
@@ -57,6 +58,7 @@ export default function App() {
           generatedAt: new Date().toISOString(),
           preset: presetId,
           selectedTags,
+          items: shuffleSetOptions(MOCK_SET.items),
         };
       } else {
         generated = await generateSet({ presetId, selectedTags });

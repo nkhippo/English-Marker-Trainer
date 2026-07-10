@@ -458,6 +458,8 @@ p.sub {
   border-radius: 14px;
   padding: 16px 18px;
   box-shadow: var(--shadow);
+  container-type: inline-size;
+  container-name: qcard;
 }
 
 .context-line {
@@ -491,7 +493,7 @@ p.sub {
 
 /* Choices (pre-answer chrome; post-answer colors stay inline) */
 
-/* Choices — default 1×4, then 2×2, then 4×1 */
+/* Choices — default 1×4; card幅に応じて 2×2 → 4×1（全モード共通） */
 
 .question-card .choices-row {
   display: grid;
@@ -518,13 +520,31 @@ p.sub {
   transform: translateY(-1px);
 }
 
-@media (max-width: 640px) {
-  .question-card .choices-row {
+@container qcard (max-width: 560px) {
+  .choices-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .choice-btn {
     padding: 11px 12px;
+  }
+}
+
+@container qcard (max-width: 360px) {
+  .choices-row {
+    grid-template-columns: 1fr;
+  }
+
+  .choice-btn {
+    text-align: left;
+    padding: 11px 14px;
+  }
+}
+
+/* viewport フォールバック（container query 非対応向け） */
+@media (max-width: 640px) {
+  .question-card .choices-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -535,7 +555,6 @@ p.sub {
 
   .choice-btn {
     text-align: left;
-    padding: 11px 14px;
   }
 }
 

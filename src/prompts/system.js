@@ -89,7 +89,7 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 
 ## 制約
 1. タグは事前指定を厳守。変更・追加・省略禁止。
-2. 正解は1問につき1つだけ。
+2. 正解は1問につき1つだけ。options の正解位置は A〜D のどこでもよい（先頭固定にしない）。
 3. 慣用句禁止: Would you like / May I help you / Shall we / Why don't you / How about / Let's / Would you mind 等の疑問文型慣用フレーズを template に含めない。叙述文・通常の情報疑問（Do you want / What do you think of 等）で書く。
 4. CEFR A1〜B1 語彙のみ。難語・慣用句を避ける。
 5. 同一 lemma を1セット内で3回以上使わない。
