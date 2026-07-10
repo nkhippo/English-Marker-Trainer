@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import AppShell, { AppHeader } from './components/AppShell.jsx';
 import SetupScreen from './components/SetupScreen.jsx';
 import LoadingScreen from './components/LoadingScreen.jsx';
 import QuestionScreen from './components/QuestionScreen.jsx';
@@ -10,6 +11,10 @@ import { isApiConfigured } from './api/claude.js';
 import { generateSet } from './utils/retryLogic.js';
 import './App.css';
 
+function scrollToTop() {
+  document.getElementById('app-scroll')?.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 export default function App() {
   const [screen, setScreen] = useState('setup');
   const [presetId, setPresetId] = useState('mix');
@@ -19,6 +24,7 @@ export default function App() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [answers, setAnswers] = useState([]);
   const [reviewed, setReviewed] = useState([]);
+  const [score, setScore] = useState(0);
   const [error, setError] = useState(null);
   const [showExport, setShowExport] = useState(false);
 
@@ -30,7 +36,9 @@ export default function App() {
     setCurrentIdx(0);
     setAnswers([]);
     setReviewed([]);
+    setScore(0);
     setError(null);
+    scrollToTop();
   }, []);
 
   const startSession = async () => {
@@ -58,7 +66,9 @@ export default function App() {
       setAnswers(new Array(10).fill(null));
       setReviewed(new Array(10).fill(false));
       setCurrentIdx(0);
+      setScore(0);
       setScreen('question');
+      scrollToTop();
     } catch (e) {
       console.error(e);
       setError(e.message || '生成に失敗しました');
@@ -67,12 +77,21 @@ export default function App() {
   };
 
   const handleSelect = (key) => {
+    if (!set || reviewed[currentIdx]) return;
+
+    const item = set.items[currentIdx];
+    const picked = item.options.find((o) => o.key === key);
+
     const nextAnswers = [...answers];
     nextAnswers[currentIdx] = key;
     const nextReviewed = [...reviewed];
     nextReviewed[currentIdx] = true;
     setAnswers(nextAnswers);
     setReviewed(nextReviewed);
+
+    if (picked?.correct) {
+      setScore((s) => s + 1);
+    }
   };
 
   const handleNext = () => {
@@ -81,15 +100,19 @@ export default function App() {
     } else {
       setCurrentIdx((i) => i + 1);
     }
-    window.scrollTo(0, 0);
+    scrollToTop();
   };
 
   return (
-    <div className="app">
+    <AppShell>
+      <AppHeader />
+
       {error && (
         <div className="error-banner" role="alert">
-          {error}
-          <button type="button" onClick={() => setError(null)}>×</button>
+          <span>{error}</span>
+          <button type="button" className="error-dismiss" onClick={() => setError(null)} aria-label="閉じる">
+            ×
+          </button>
         </div>
       )}
 
@@ -115,6 +138,7 @@ export default function App() {
           total={10}
           reviewed={reviewed[currentIdx]}
           picked={answers[currentIdx]}
+          score={score}
           onSelect={handleSelect}
           onNext={handleNext}
         />
@@ -136,6 +160,6 @@ export default function App() {
           onClose={() => setShowExport(false)}
         />
       )}
-    </div>
+    </AppShell>
   );
 }

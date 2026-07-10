@@ -1,0 +1,17 @@
+export const C = {
+  page: '#FAF9F6',
+  card: '#FFFFFF',
+  line: '#EAE8E1',
+  t1: '#1C1B19',
+  t2: '#6B6862',
+  t3: '#9A968D',
+  ink: '#1C1B19',
+  mutedBg: '#F5F4F0',
+  correctBg: '#f0fdf4',
+  correctBorder: '#22c55e',
+  correctText: '#15803d',
+  wrongBg: '#fff1f2',
+  wrongBorder: '#ef4444',
+  wrongText: '#b91c1c',
+  error: '#C0392B',
+};

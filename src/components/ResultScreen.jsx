@@ -26,40 +26,38 @@ export default function ResultScreen({ set, answers, onExport, onRestart }) {
     return picked?.correct;
   }).length;
 
+  const pct = Math.round((totalCorrect / set.items.length) * 100);
+
   const toggleCat = (cat) => {
     setOpenCats((prev) => ({ ...prev, [cat]: !prev[cat] }));
   };
 
   return (
-    <>
-      <header className="top">
-        <div className="brand">Marker Trainer</div>
-        <div className="brand-name">結果</div>
-      </header>
-      <div className="screen">
-        <div className="result-summary">
-          <div className="result-label">今回のスコア</div>
-          <div>
-            <span className="result-score">{totalCorrect}</span>
-            <span className="result-score-total">/ 10</span>
-          </div>
-        </div>
+    <div className="result-screen">
+      <div className="result-hero">
+        <p className="result-score">
+          {totalCorrect}
+          <span className="result-score-total"> / {set.items.length}</span>
+        </p>
+        <p className="result-pct">正答率 {pct}%</p>
+      </div>
 
-        <div id="categories">
-          {Object.entries(scoresByCat).map(([cat, s]) => {
-            const pct = Math.round((s.correct / s.total) * 100);
-            const tags = Object.entries(scoresByTag).filter(([t]) => TAGS[t]?.category === cat);
-            const isOpen = openCats[cat];
-            return (
-              <div key={cat} className={`category ${isOpen ? 'open' : ''}`}>
-                <button type="button" className="category-head" onClick={() => toggleCat(cat)}>
-                  <div className="category-name">{CATEGORIES[cat] ?? cat}</div>
-                  <div className="category-bar">
-                    <div className="category-bar-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                  <div className="category-score">{s.correct}/{s.total}</div>
-                  <div className="category-caret">▼</div>
-                </button>
+      <div className="result-categories">
+        {Object.entries(scoresByCat).map(([cat, s]) => {
+          const catPct = Math.round((s.correct / s.total) * 100);
+          const tags = Object.entries(scoresByTag).filter(([t]) => TAGS[t]?.category === cat);
+          const isOpen = openCats[cat];
+          return (
+            <div key={cat} className={`category-card${isOpen ? ' is-open' : ''}`}>
+              <button type="button" className="category-head" onClick={() => toggleCat(cat)}>
+                <span className="category-name">{CATEGORIES[cat] ?? cat}</span>
+                <span className="category-bar">
+                  <span className="category-bar-fill" style={{ width: `${catPct}%` }} />
+                </span>
+                <span className="category-score">{s.correct}/{s.total}</span>
+                <span className="category-chevron" aria-hidden>▼</span>
+              </button>
+              {isOpen && (
                 <div className="category-detail">
                   {tags.map(([tag, ts]) => (
                     <div key={tag} className="tag-row">
@@ -68,16 +66,20 @@ export default function ResultScreen({ set, answers, onExport, onRestart }) {
                     </div>
                   ))}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="action-bar">
-          <button type="button" className="secondary-btn" onClick={onExport}>MDエクスポート</button>
-          <button type="button" className="secondary-btn" onClick={onRestart}>もう一度</button>
-        </div>
+              )}
+            </div>
+          );
+        })}
       </div>
-    </>
+
+      <div className="result-actions">
+        <button type="button" className="btn-secondary" onClick={onExport}>
+          MDエクスポート
+        </button>
+        <button type="button" className="btn-primary btn-primary--compact" onClick={onRestart}>
+          もう一度
+        </button>
+      </div>
+    </div>
   );
 }
