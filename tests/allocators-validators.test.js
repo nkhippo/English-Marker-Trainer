@@ -383,6 +383,39 @@ describe('validators', () => {
     assert.ok(!errors.some((e) => e.startsWith('V9') || e.startsWith('V15')), errors.join('; '));
   });
 
+  it('truncates overlong contextEn and template for V10', () => {
+    const longContext =
+      'She is standing at the busy airport gate and looking for her delayed flight right now';
+    assert.ok(longContext.split(/\s+/).length > 10);
+
+    const item = sanitizeContextAndIdiom(
+      {
+        tag: 'V-MOD-DEO',
+        sceneTag: '空港',
+        functionTag: '確認する',
+        contextEn: longContext,
+        template: 'She ___ go to the gate before the final boarding call starts today',
+        options: [
+          { key: 'A', text: 'has to', correct: true },
+          { key: 'B', text: 'must', correct: false, reasonCode: 'V_MOD_SOURCE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'should', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'may', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      { sceneTag: '空港', functionTag: '確認する' },
+    );
+
+    assert.ok(item.contextEn.split(/\s+/).length <= 10, item.contextEn);
+    assert.ok(item.template.split(/\s+/).length <= 12, item.template);
+    assert.ok(item.template.includes('___'));
+    const { errors } = validateItem(item, {
+      expectedTag: 'V-MOD-DEO',
+      expectedScene: { sceneTag: '空港', functionTag: '確認する' },
+      expectedPool: ['have to', 'must', 'should', 'may'],
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V10')), errors.join('; '));
+  });
+
   it('sanitizes disallowed reasonCode for tag', () => {
     const item = sanitizeItemReasonCodes({
       tag: 'V-VOICE',

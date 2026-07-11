@@ -311,7 +311,7 @@ export function sanitizeNounLexicalFields(item, expectedGrid = null) {
 }
 
 /**
- * V9/V15 向け: contextEn 欠落の補完と template 慣用句の書き換え。
+ * V9/V10/V15 向け: contextEn 欠落の補完、語数超過の切り詰め、template 慣用句の書き換え。
  */
 export function sanitizeContextAndIdiom(item, expectedScene = null) {
   if (!item) return item;
@@ -330,6 +330,11 @@ export function sanitizeContextAndIdiom(item, expectedScene = null) {
     changed = true;
   }
 
+  if (next.contextEn && wordCount(next.contextEn) > 10) {
+    next.contextEn = truncateToWordLimit(next.contextEn, 10);
+    changed = true;
+  }
+
   if (next.template && containsIdiom(next.template)) {
     const rewritten = rewriteIdiomTemplate(next.template);
     if (rewritten !== next.template) {
@@ -338,7 +343,44 @@ export function sanitizeContextAndIdiom(item, expectedScene = null) {
     }
   }
 
+  if (next.template && wordCount(next.template) > 12) {
+    const truncated = truncateTemplatePreservingBlank(next.template, 12);
+    if (truncated !== next.template) {
+      next.template = truncated;
+      changed = true;
+    }
+  }
+
   return changed ? next : item;
+}
+
+/** 先頭 maxWords 語に切り詰め（空白区切り） */
+export function truncateToWordLimit(text, maxWords) {
+  if (typeof text !== 'string') return text;
+  const words = text.trim().match(/\S+/g) ?? [];
+  if (words.length <= maxWords) return text.trim();
+  return words.slice(0, maxWords).join(' ');
+}
+
+/** ___ を残しつつ template を maxWords 語以内に収める */
+export function truncateTemplatePreservingBlank(template, maxWords = 12) {
+  if (typeof template !== 'string') return template;
+  const words = template.trim().match(/\S+/g) ?? [];
+  if (words.length <= maxWords) return template.trim();
+
+  const blankIdx = words.findIndex((w) => w.includes('___'));
+  if (blankIdx === -1) return words.slice(0, maxWords).join(' ');
+
+  const keep = Math.min(words.length, maxWords);
+  let start = Math.max(0, blankIdx - Math.floor((keep - 1) / 2));
+  if (start + keep > words.length) start = words.length - keep;
+  start = Math.max(0, start);
+  let slice = words.slice(start, start + keep);
+  if (!slice.some((w) => w.includes('___'))) {
+    start = Math.max(0, Math.min(blankIdx, words.length - keep));
+    slice = words.slice(start, start + keep);
+  }
+  return slice.join(' ');
 }
 
 /**
