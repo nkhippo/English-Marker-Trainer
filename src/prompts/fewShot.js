@@ -93,6 +93,21 @@ export const FEW_SHOT_EXAMPLES = [
       { key: 'D', text: 'may play', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: '不確実な可能性の意味になる', appliedMeaning: '「弾くかもしれない」という不確かな意味になる' },
     ],
   },
+  {
+    id: 7,
+    tag: 'V-TA',
+    sceneTag: '自己と将来',
+    functionTag: '確認する',
+    contextEn: null,
+    ja: 'あなたはもう将来の計画を立てましたか？',
+    template: 'Have you already ___ your plan for the future?',
+    options: [
+      { key: 'A', text: 'made', correct: true, reasonCode: null, note: null, appliedMeaning: null },
+      { key: 'B', text: 'make', correct: false, reasonCode: 'V_ASPECT', note: 'have のあとは過去分詞が必要', appliedMeaning: 'Have と原形が続き文法的に不完全で、完了の意味が確定しない' },
+      { key: 'C', text: 'making', correct: false, reasonCode: 'V_ASPECT', note: '進行なら been making が必要', appliedMeaning: 'Have のあとに -ing だけが続き、完了進行として成立しない' },
+      { key: 'D', text: 'been making', correct: false, reasonCode: 'V_ASPECT', note: 'already と完了進行の継続感が合わない', appliedMeaning: 'ずっと計画を立て続けている最中だ、という意味になる' },
+    ],
+  },
 ];
 
 export function formatFewShotBlock() {

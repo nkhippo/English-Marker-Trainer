@@ -100,6 +100,11 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
 12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。a cup of {n} の cup は headNoun に合う単位（glass/bowl/piece/bottle/slice 等）へ置き換えてよい。
+13. V-VOICE: 4択はすべて**文法的に成立する動詞句**に限る（態×相の対比。例: wrote / was written / was writing / has written）。助動詞の直後に過去分詞だけを置く形（should known / must written 等＝be/have 欠落の形態不全）は禁止。誤答は「態や相が違うが形としては成立する」ものだけにする。
+14. V-TA: 時制×相の対比。次の2パターンのいずれか。
+   - (A) 動詞句全体を穴に入れる（例: I ___ dinner when the phone rang. → was eating / ate / have eaten / had eaten）。
+   - (B) **have / has / had を template 側に残し**、穴にはその後続形だけを入れる（例: Have you already ___ your plan? → made / make / making / been making）。学習者に have マーカーを見せ、have を含めた完了の時制・相の妥当性を問う。
+   (B) のとき、選択肢を ___ に入れた**文全体**で時制・相を判定できること。have/has/had のあとに有限動詞・別の助動詞句（was making / has made / is making 等）を置いて二重時制・形態不全になる選択肢は禁止。誤答は「完了のスロット候補になりうる非定形」（原形・過去分詞・-ing・been+-ing 等）に限り、have と組み合わせたときの時制・相のずれを説明すること。
 
 ## 助動詞プール参考
 V-MOD-DYN: ${MODAL_POOLS['V-MOD-DYN'].join(', ')}

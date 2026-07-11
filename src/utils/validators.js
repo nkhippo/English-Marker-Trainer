@@ -533,6 +533,83 @@ function validateV17(item) {
   return null;
 }
 
+/** 助動詞の直後に過去分詞だけが続く形態不全（should known / must written 等） */
+const MODAL_PREFIX =
+  /^(?:should|must|can|could|will|would|may|might|shall|ought to|had better|(?:have|has|had|need|needs) to)\s+/i;
+
+const IRREGULAR_PAST_PARTICIPLES = new Set([
+  'known', 'written', 'done', 'seen', 'taken', 'given', 'made', 'built', 'spoken', 'broken',
+  'chosen', 'driven', 'eaten', 'fallen', 'forgotten', 'gotten', 'hidden', 'ridden', 'risen',
+  'shown', 'stolen', 'thrown', 'worn', 'won', 'begun', 'blown', 'drawn', 'flown', 'grown',
+  'lain', 'sworn', 'torn', 'woken', 'bought', 'brought', 'caught', 'fought', 'taught',
+  'thought', 'sought', 'found', 'bound', 'held', 'kept', 'left', 'lost', 'meant', 'met',
+  'paid', 'said', 'sent', 'slept', 'sold', 'spent', 'stood', 'told', 'understood', 'felt',
+  'heard', 'led', 'read', 'run', 'sung', 'sunk', 'swum', 'been', 'put', 'cut', 'hit', 'hurt',
+  'let', 'set', 'shut', 'spread', 'cost',
+]);
+
+function looksLikePastParticiple(word) {
+  const w = word.toLowerCase();
+  if (IRREGULAR_PAST_PARTICIPLES.has(w)) return true;
+  if (w.length > 3 && (w.endsWith('ed') || w.endsWith('en'))) return true;
+  return false;
+}
+
+/** @returns {boolean} true if option is modal + bare past participle (missing be/have) */
+export function isIllFormedModalParticiple(text) {
+  if (typeof text !== 'string') return false;
+  const t = text.trim().toLowerCase();
+  if (!MODAL_PREFIX.test(t)) return false;
+  const rest = t.replace(MODAL_PREFIX, '').trim();
+  if (/^(be|been|being|have|has|had)\b/.test(rest)) return false;
+  const tokens = rest.split(/\s+/);
+  return tokens.length === 1 && looksLikePastParticiple(tokens[0]);
+}
+
+function validateV18(item) {
+  if (item.tag !== 'V-VOICE') return null;
+  for (const opt of item.options ?? []) {
+    if (isIllFormedModalParticiple(opt.text)) {
+      return `V18: ill-formed modal+participle "${opt.text}"`;
+    }
+  }
+  return null;
+}
+
+/** template で have/has/had が ___ より前にあり、完了の後続スロットを問う形か */
+export function templateHasPerfectAuxBeforeBlank(template) {
+  if (typeof template !== 'string') return false;
+  const idx = template.indexOf('___');
+  if (idx === -1) return false;
+  const before = template.slice(0, idx);
+  return /\b(have|has|had)\b/i.test(before);
+}
+
+/** have 後続スロットに置けない有限動詞・別助動詞句 */
+const FINITE_OR_AUX_OPTION =
+  /^(am|is|are|was|were|do|does|did|have|has|had|will|would|can|could|may|might|must|shall|should)\b/i;
+
+/** @returns {boolean} true if option cannot follow have/has/had in the blank */
+export function isIncompatibleAfterPerfectAux(text) {
+  if (typeof text !== 'string') return false;
+  const t = text.trim();
+  if (!t) return false;
+  // been + ... は完了進行として許容
+  if (/^been\b/i.test(t)) return false;
+  return FINITE_OR_AUX_OPTION.test(t);
+}
+
+function validateV19(item) {
+  if (item.tag !== 'V-TA') return null;
+  if (!templateHasPerfectAuxBeforeBlank(item.template)) return null;
+  for (const opt of item.options ?? []) {
+    if (isIncompatibleAfterPerfectAux(opt.text)) {
+      return `V19: option incompatible after have/has/had "${opt.text}"`;
+    }
+  }
+  return null;
+}
+
 const ITEM_VALIDATORS = [
   validateV2,
   validateV3,
@@ -548,6 +625,8 @@ const ITEM_VALIDATORS = [
   validateV15,
   validateV16,
   validateV17,
+  validateV18,
+  validateV19,
 ];
 
 /**

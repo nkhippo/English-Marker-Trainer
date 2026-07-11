@@ -14,6 +14,9 @@ import {
   sanitizeContextAndIdiom,
   sanitizeLemmaOverflow,
   validateSet,
+  isIllFormedModalParticiple,
+  isIncompatibleAfterPerfectAux,
+  templateHasPerfectAuxBeforeBlank,
 } from '../src/utils/validators.js';
 import { hasLemmaOverflow, getOverflowingLemmas } from '../src/utils/lemmaCounter.js';
 import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
@@ -308,6 +311,101 @@ describe('validators', () => {
     });
     assert.equal(item.options[1].reasonCode, 'V_VOICE');
     assert.equal(item.options[3].reasonCode, 'V_VOICE');
+  });
+
+  it('detects ill-formed modal + past participle (V18)', () => {
+    assert.equal(isIllFormedModalParticiple('should known'), true);
+    assert.equal(isIllFormedModalParticiple('must written'), true);
+    assert.equal(isIllFormedModalParticiple('should be known'), false);
+    assert.equal(isIllFormedModalParticiple('should know'), false);
+    assert.equal(isIllFormedModalParticiple('has written'), false);
+
+    const bad = {
+      id: 1,
+      tag: 'V-VOICE',
+      sceneTag: '語学学校',
+      functionTag: '確認する',
+      contextEn: null,
+      ja: 'あなたの夢は多くの人に知られるべきだ。',
+      template: 'Your dream ___ by many people.',
+      options: [
+        { key: 'A', text: 'should know', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'B', text: 'should be known', correct: true, reasonCode: null },
+        { key: 'C', text: 'should be knowing', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'should known', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const { errors } = validateItem(bad, {
+      expectedTag: 'V-VOICE',
+      expectedScene: { sceneTag: '語学学校', functionTag: '確認する' },
+      expectedPool: null,
+    });
+    assert.ok(errors.some((e) => e.startsWith('V18')), errors.join('; '));
+
+    const good = {
+      ...bad,
+      options: [
+        { key: 'A', text: 'should know', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'B', text: 'should be known', correct: true, reasonCode: null },
+        { key: 'C', text: 'should be knowing', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'has known', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const ok = validateItem(good, {
+      expectedTag: 'V-VOICE',
+      expectedScene: { sceneTag: '語学学校', functionTag: '確認する' },
+      expectedPool: null,
+    });
+    assert.ok(!ok.errors.some((e) => e.startsWith('V18')), ok.errors.join('; '));
+  });
+
+  it('rejects finite options after have/has/had before blank (V19)', () => {
+    assert.equal(templateHasPerfectAuxBeforeBlank('Have you already ___ your plan?'), true);
+    assert.equal(templateHasPerfectAuxBeforeBlank('I ___ dinner when the phone rang.'), false);
+    assert.equal(isIncompatibleAfterPerfectAux('was making'), true);
+    assert.equal(isIncompatibleAfterPerfectAux('has made'), true);
+    assert.equal(isIncompatibleAfterPerfectAux('made'), false);
+    assert.equal(isIncompatibleAfterPerfectAux('make'), false);
+    assert.equal(isIncompatibleAfterPerfectAux('making'), false);
+    assert.equal(isIncompatibleAfterPerfectAux('been making'), false);
+
+    const bad = {
+      id: 1,
+      tag: 'V-TA',
+      sceneTag: '自己と将来',
+      functionTag: '確認する',
+      contextEn: null,
+      ja: 'あなたはもう将来の計画を立てましたか？',
+      template: 'Have you already ___ your plan for the future?',
+      options: [
+        { key: 'A', text: 'made', correct: true, reasonCode: null },
+        { key: 'B', text: 'make', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'was making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const { errors } = validateItem(bad, {
+      expectedTag: 'V-TA',
+      expectedScene: { sceneTag: '自己と将来', functionTag: '確認する' },
+      expectedPool: null,
+    });
+    assert.ok(errors.some((e) => e.startsWith('V19')), errors.join('; '));
+
+    const good = {
+      ...bad,
+      options: [
+        { key: 'A', text: 'made', correct: true, reasonCode: null },
+        { key: 'B', text: 'make', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'been making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const ok = validateItem(good, {
+      expectedTag: 'V-TA',
+      expectedScene: { sceneTag: '自己と将来', functionTag: '確認する' },
+      expectedPool: null,
+    });
+    assert.ok(!ok.errors.some((e) => e.startsWith('V19')), ok.errors.join('; '));
   });
 
   it('truncates option notes longer than 40 chars', () => {
