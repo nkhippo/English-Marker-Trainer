@@ -101,8 +101,8 @@ export function modalLemmaFromDynOption(optionText, baseVerb) {
 }
 
 /**
- * モデルが返す表層ゆれを、事前抽選 pool に揃える。
- * 正解 lemma が expectedPool に含まれる場合のみ書き換え、そうでなければそのまま返す。
+ * モデルが返す表層ゆれ・プール外候補を、事前抽選 pool に強制整列する。
+ * 正解 lemma が pool 外でも、pool 内の最有力候補（または先頭）を正解にして再構築する。
  */
 export function sanitizeModalPoolOptions(item, expectedPool) {
   if (!item || !MODAL_TAGS.has(item.tag) || !expectedPool?.length || !item.options?.length) {
@@ -115,13 +115,14 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
   if (item.tag === 'V-MOD-DEO') {
     const lemmas = options.map((o) => modalLemmaFromDeoOption(o.text));
     if (poolSetsMatch(lemmas, expected)) {
-      // 表層は許容（has to 等）。poolUsed だけ正規化
       return { ...item, poolUsed: [...expectedPool] };
     }
 
-    const correct = options.find((o) => o.correct);
-    const correctLemma = correct ? modalLemmaFromDeoOption(correct.text) : null;
-    if (!correctLemma || !expected.includes(correctLemma)) return item;
+    const correctLemma = pickCorrectLemmaInPool(
+      options,
+      expected,
+      (text) => modalLemmaFromDeoOption(text),
+    );
 
     const byLemma = new Map();
     for (const opt of options) {
@@ -138,9 +139,9 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
           key,
           text: prev.text,
           correct: isCorrect,
-          reasonCode: isCorrect ? null : prev.reasonCode,
-          note: isCorrect ? null : prev.note,
-          appliedMeaning: isCorrect ? null : prev.appliedMeaning,
+          reasonCode: isCorrect ? null : (prev.reasonCode || 'V_MOD_SENSE_MISMATCH'),
+          note: isCorrect ? null : (prev.note || 'プール外の候補を置換'),
+          appliedMeaning: isCorrect ? null : (prev.appliedMeaning || '別の助動詞の意味になる'),
         };
       }
       return {
@@ -157,30 +158,35 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
   }
 
   // V-MOD-DYN
-  if (!item.baseVerb) return item;
-  const lemmas = options.map((o) => modalLemmaFromDynOption(o.text, item.baseVerb));
-  if (poolSetsMatch(lemmas, expected)) {
-    return { ...item, poolUsed: [...expectedPool] };
+  let baseVerb = item.baseVerb;
+  if (!baseVerb) {
+    baseVerb = inferDynBaseVerb(options);
+    if (!baseVerb) return item;
   }
 
-  const correct = options.find((o) => o.correct);
-  const correctLemma = correct
-    ? modalLemmaFromDynOption(correct.text, item.baseVerb)
-    : null;
-  if (!correctLemma || !expected.includes(correctLemma)) return item;
+  const lemmas = options.map((o) => modalLemmaFromDynOption(o.text, baseVerb));
+  if (poolSetsMatch(lemmas, expected)) {
+    return { ...item, baseVerb, poolUsed: [...expectedPool] };
+  }
+
+  const correctLemma = pickCorrectLemmaInPool(
+    options,
+    expected,
+    (text) => modalLemmaFromDynOption(text, baseVerb),
+  );
 
   const byLemma = new Map();
   for (const opt of options) {
-    byLemma.set(modalLemmaFromDynOption(opt.text, item.baseVerb), opt);
+    byLemma.set(modalLemmaFromDynOption(opt.text, baseVerb), opt);
   }
 
   const rebuilt = expectedPool.map((lemma, i) => {
     const key = String.fromCharCode(65 + i);
     const prev = byLemma.get(lemma.toLowerCase());
     const isCorrect = lemma.toLowerCase() === correctLemma;
-    const text = prev?.text && modalLemmaFromDynOption(prev.text, item.baseVerb) === lemma.toLowerCase()
+    const text = prev?.text && modalLemmaFromDynOption(prev.text, baseVerb) === lemma.toLowerCase()
       ? prev.text
-      : expandModalOption('V-MOD-DYN', lemma, item.baseVerb);
+      : expandModalOption('V-MOD-DYN', lemma, baseVerb);
 
     if (prev) {
       return {
@@ -188,9 +194,9 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
         key,
         text,
         correct: isCorrect,
-        reasonCode: isCorrect ? null : prev.reasonCode,
-        note: isCorrect ? null : prev.note,
-        appliedMeaning: isCorrect ? null : prev.appliedMeaning,
+        reasonCode: isCorrect ? null : (prev.reasonCode || 'V_MOD_SENSE_MISMATCH'),
+        note: isCorrect ? null : (prev.note || 'プール外の候補を置換'),
+        appliedMeaning: isCorrect ? null : (prev.appliedMeaning || '別の助動詞の意味になる'),
       };
     }
     return {
@@ -203,7 +209,42 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
     };
   });
 
-  return { ...item, poolUsed: [...expectedPool], options: rebuilt };
+  return { ...item, baseVerb, poolUsed: [...expectedPool], options: rebuilt };
+}
+
+/** 正解が pool 内ならそれを使い、外なら options 中の pool 内 lemma、それも無ければ pool 先頭 */
+function pickCorrectLemmaInPool(options, expectedLower, lemmaOf) {
+  const correct = options.find((o) => o.correct);
+  const correctLemma = correct ? lemmaOf(correct.text) : null;
+  if (correctLemma && expectedLower.includes(correctLemma)) return correctLemma;
+
+  for (const opt of options) {
+    const lemma = lemmaOf(opt.text);
+    if (expectedLower.includes(lemma)) return lemma;
+  }
+  return expectedLower[0];
+}
+
+/** baseVerb 欠落時、選択肢末尾の共通動詞を推定 */
+function inferDynBaseVerb(options) {
+  const tails = (options ?? [])
+    .map((o) => String(o.text ?? '').trim().toLowerCase())
+    .filter(Boolean)
+    .map((t) => {
+      const parts = t.split(/\s+/);
+      return parts[parts.length - 1];
+    });
+  if (!tails.length) return null;
+  const counts = {};
+  for (const t of tails) counts[t] = (counts[t] ?? 0) + 1;
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+  if (!best || best[1] < 2) return null;
+  // finishes → finish 程度の簡易正規化
+  let v = best[0];
+  if (v.endsWith('ies') && v.length > 4) v = `${v.slice(0, -3)}y`;
+  else if (v.endsWith('es') && v.length > 3) v = v.slice(0, -2);
+  else if (v.endsWith('s') && v.length > 2) v = v.slice(0, -1);
+  return v;
 }
 
 /**

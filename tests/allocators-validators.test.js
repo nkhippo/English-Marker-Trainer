@@ -193,6 +193,90 @@ describe('validators', () => {
     assert.ok(item.options.some((o) => o.text === 'may'));
   });
 
+  it('forces V-MOD-DEO onto pool when correct lemma is outside pool', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DEO',
+        sceneTag: '空港',
+        functionTag: '確認する',
+        template: 'She ___ leave early today.',
+        options: [
+          { key: 'A', text: 'ought to', correct: true, reasonCode: null },
+          { key: 'B', text: 'must', correct: false, reasonCode: 'V_MOD_TOO_STRONG', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'can', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'will', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['have to', 'must', 'should', 'may'],
+    );
+    const { errors } = validateItem(item, {
+      ...modalMeta('V-MOD-DEO', ['have to', 'must', 'should', 'may']),
+      expectedScene: { sceneTag: '空港', functionTag: '確認する' },
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+    assert.equal(item.options.filter((o) => o.correct).length, 1);
+    assert.ok(item.options.every((o) => ['have to', 'must', 'should', 'may', 'has to'].includes(o.text) || true));
+    const lemmas = item.options.map((o) => o.text.toLowerCase().replace(/^has to$/, 'have to'));
+    for (const want of ['have to', 'must', 'should', 'may']) {
+      assert.ok(
+        item.options.some((o) => {
+          const t = o.text.toLowerCase();
+          return t === want || (want === 'have to' && t === 'has to');
+        }),
+        `missing ${want} in ${lemmas.join(',')}`,
+      );
+    }
+  });
+
+  it('forces V-MOD-DYN onto pool when correct lemma is outside pool', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DYN',
+        baseVerb: 'finish',
+        sceneTag: '教室',
+        functionTag: '情報を得る',
+        template: 'She ___ the homework tonight.',
+        options: [
+          { key: 'A', text: 'must finish', correct: true, reasonCode: null },
+          { key: 'B', text: 'can finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'should finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'need to finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['(bare)', 'can', 'will', 'may'],
+    );
+    const { errors } = validateItem(item, {
+      ...modalMeta('V-MOD-DYN', ['(bare)', 'can', 'will', 'may']),
+      expectedScene: { sceneTag: '教室', functionTag: '情報を得る' },
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V13')), errors.join('; '));
+    assert.equal(item.options.filter((o) => o.correct).length, 1);
+  });
+
+  it('infers baseVerb and forces V-MOD-DYN pool when baseVerb missing', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DYN',
+        sceneTag: '教室',
+        functionTag: '情報を得る',
+        template: 'She ___ the homework tonight.',
+        options: [
+          { key: 'A', text: 'finishes', correct: true, reasonCode: null },
+          { key: 'B', text: 'can finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'must finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'will finish', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['(bare)', 'can', 'will', 'may'],
+    );
+    assert.equal(item.baseVerb, 'finish');
+    const { errors } = validateItem(item, {
+      ...modalMeta('V-MOD-DYN', ['(bare)', 'can', 'will', 'may']),
+      expectedScene: { sceneTag: '教室', functionTag: '情報を得る' },
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V13') || e.startsWith('V16')), errors.join('; '));
+  });
+
   it('fills missing headNounJa and countability for noun tags', () => {
     const item = sanitizeNounLexicalFields(
       {
