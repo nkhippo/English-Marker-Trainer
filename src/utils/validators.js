@@ -84,6 +84,25 @@ export function modalLemmaFromDynOption(optionText, baseVerb) {
   const bv = (baseVerb || '').toLowerCase();
   if (!bv) return text;
 
+  // 疑問倒置: Are you going to study / Will you study / Do you study
+  const inv = text.match(
+    /^(am|is|are|was|were|do|does|did|have|has|had|will|would|can|could|may|might|must)\s+(i|you|he|she|it|we|they)\s+(.+)$/i,
+  );
+  if (inv) {
+    const aux = inv[1].toLowerCase();
+    const rest = inv[3].trim();
+    if (/^(do|does|did)$/.test(aux) && (rest === bv || looksLikeBaseVerbForm(rest, bv))) {
+      return '(bare)';
+    }
+    if (/^(am|is|are|was|were)$/.test(aux)) {
+      return modalLemmaFromDynOption(rest, baseVerb);
+    }
+    if (rest === bv || looksLikeBaseVerbForm(rest, bv)) {
+      return DYN_MODAL_LEMMA_MAP[aux] ?? aux;
+    }
+    return modalLemmaFromDynOption(`${aux} ${rest}`, baseVerb);
+  }
+
   if (looksLikeBaseVerbForm(text, bv)) return '(bare)';
 
   let modalPart;
@@ -714,6 +733,92 @@ function validateV21(item) {
   return null;
 }
 
+/** 動詞・助動詞・一致系（名詞は Is there ___ 等があるため除外） */
+const SLOT_LOCK_TAGS = new Set([
+  'V-TA', 'V-VOICE', 'V-MOD-DYN', 'V-MOD-DEO', 'M-AGR', 'M-SEQ', 'M-PRON-NUM', 'M-PRON-CASE',
+]);
+
+/**
+ * ___ 直前のスロット固定助動詞（Are you ___ / Did he ___ / Have they ___ 等）
+ * @returns {{ aux: string, pronoun: string|null, matched: string }|null}
+ */
+export function findSlotLockingAuxBeforeBlank(template) {
+  if (typeof template !== 'string') return null;
+  const idx = template.indexOf('___');
+  if (idx === -1) return null;
+  const before = template.slice(0, idx);
+  const m = before.match(/\b(am|is|are|was|were|do|does|did|have|has|had)(?:\s+(i|you|he|she|it|we|they))?\s*$/i);
+  if (!m) return null;
+  return {
+    aux: m[1].toLowerCase(),
+    pronoun: m[2] ? m[2].toLowerCase() : null,
+    matched: m[0],
+  };
+}
+
+const BE_FORMS = { am: 'Am', is: 'Is', are: 'Are', was: 'Was', were: 'Were' };
+const DO_FORMS = {
+  am: 'Do', is: 'Does', are: 'Do', was: 'Did', were: 'Did', do: 'Do', does: 'Does', did: 'Did',
+};
+
+function capitalizeWord(s) {
+  if (!s) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** スロット固定を外したあと、選択肢を疑問倒置ユニットへ持ち上げる */
+export function liftDynOptionPastLock(text, baseVerb, aux, pronoun) {
+  const t = String(text ?? '').trim();
+  const p = pronoun || 'you';
+  if (/^(am|is|are|was|were|do|does|did|have|has|had|will|would|can|could|may|might|must)\s+(i|you|he|she|it|we|they)\b/i.test(t)) {
+    return t;
+  }
+  const lemma = modalLemmaFromDynOption(t, baseVerb);
+  const bv = baseVerb;
+  if (lemma === 'be going to') {
+    return `${BE_FORMS[aux] || 'Are'} ${p} going to ${bv}`;
+  }
+  if (lemma === 'be able to') {
+    return `${BE_FORMS[aux] || 'Are'} ${p} able to ${bv}`;
+  }
+  if (lemma === '(bare)') {
+    return `${DO_FORMS[aux] || 'Do'} ${p} ${bv}`;
+  }
+  return `${capitalizeWord(lemma)} ${p} ${bv}`;
+}
+
+/**
+ * Are you ___ / Did you ___ 等のスロット固定を解消し、aux(+代名詞)を選択肢側へ移す。
+ * 自動持ち上げは V-MOD-DYN のみ（プール構造が明確なため）。他タグは V22 で再生成促す。
+ */
+export function sanitizeSlotLockingBlank(item) {
+  if (!item || item.tag !== 'V-MOD-DYN' || !item.baseVerb || !Array.isArray(item.options)) {
+    return item;
+  }
+  const lock = findSlotLockingAuxBeforeBlank(item.template);
+  if (!lock) return item;
+
+  const escaped = lock.matched.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+');
+  const newTemplate = item.template
+    .replace(new RegExp(`\\b${escaped}\\s*(?=___)`, 'i'), '')
+    .replace(/\s{2,}/g, ' ')
+    .trim();
+
+  const pronoun = lock.pronoun || 'you';
+  const options = item.options.map((opt) => ({
+    ...opt,
+    text: liftDynOptionPastLock(opt.text, item.baseVerb, lock.aux, pronoun),
+  }));
+  return { ...item, template: newTemplate, options };
+}
+
+function validateV22(item) {
+  if (!SLOT_LOCK_TAGS.has(item.tag)) return null;
+  const lock = findSlotLockingAuxBeforeBlank(item.template);
+  if (!lock) return null;
+  return `V22: slot-locking aux before blank "${lock.matched.trim()}"`;
+}
+
 function normalizeOverlapTokens(text) {
   return String(text)
     .toLowerCase()
@@ -772,6 +877,7 @@ const ITEM_VALIDATORS = [
   validateV18,
   validateV20,
   validateV21,
+  validateV22,
 ];
 
 /**

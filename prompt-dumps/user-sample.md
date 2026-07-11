@@ -15,12 +15,12 @@ selectedTags: ["N-NP","N-UNC","N-QNT","V-TA","V-VOICE","V-MOD-DYN","V-MOD-DEO","
     "tag": "N-NP",
     "sceneTag": "買い物",
     "functionTag": "情報を得る",
-    "gridVariant": "determiners",
+    "gridVariant": "article-singular",
     "gridPatterns": [
       "a {n}",
       "the {n}",
-      "some {n}s",
-      "any {n}s"
+      "{n}",
+      "{n}s"
     ],
     "countability": "countable"
   },
@@ -29,11 +29,11 @@ selectedTags: ["N-NP","N-UNC","N-QNT","V-TA","V-VOICE","V-MOD-DYN","V-MOD-DEO","
     "tag": "N-UNC",
     "sceneTag": "空港",
     "functionTag": "情報を得る",
-    "gridVariant": "unit-of",
+    "gridVariant": "some-any",
     "gridPatterns": [
       "{n}",
-      "a {n}",
-      "a cup of {n}",
+      "some {n}",
+      "any {n}",
       "the {n}"
     ],
     "countability": "uncountable"
@@ -105,8 +105,8 @@ selectedTags: ["N-NP","N-UNC","N-QNT","V-TA","V-VOICE","V-MOD-DYN","V-MOD-DEO","
 問7 (V-MOD-DEO): poolUsed=["have to","must","should","may"]. この4つの中から正解を1つ選び、残り3つを誤答として配置。options の lemma は poolUsed と完全一致（順不同）。プール外禁止。
 
 ## 名詞グリッド問の指示
-問1 (N-NP): gridVariant=determiners, gridPatterns=["a {n}","the {n}","some {n}s","any {n}s"], countability=countable
-問2 (N-UNC): gridVariant=unit-of, gridPatterns=["{n}","a {n}","a cup of {n}","the {n}"], countability=uncountable
+問1 (N-NP): gridVariant=article-singular, gridPatterns=["a {n}","the {n}","{n}","{n}s"], countability=countable
+問2 (N-UNC): gridVariant=some-any, gridPatterns=["{n}","some {n}","any {n}","the {n}"], countability=uncountable
 
 tagAllocation のタグ・scene・poolUsed・gridPatterns を厳守すること。
 N-NP / N-UNC / N-QNT では headNoun・headNounJa・countability を必ず出力すること（欠けると検証失敗）。

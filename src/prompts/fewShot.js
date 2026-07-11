@@ -79,6 +79,23 @@ export const FEW_SHOT_EXAMPLES = [
   {
     id: 6,
     tag: 'V-MOD-DYN',
+    sceneTag: '教室',
+    functionTag: '確認する',
+    contextEn: 'The teacher asked about weekend plans.',
+    ja: 'あなたは今週末に図書館で勉強するつもりですか。',
+    template: '___ at the library this weekend?',
+    baseVerb: 'study',
+    poolUsed: ['(bare)', 'may', 'might', 'be going to'],
+    options: [
+      { key: 'A', text: 'Are you going to study', correct: true, reasonCode: null, note: null, appliedMeaning: null },
+      { key: 'B', text: 'May you study', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: '許可・可能性のニュアンスになる', appliedMeaning: '勉強してもよいですか、という意味に変わってしまう' },
+      { key: 'C', text: 'Might you study', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: 'さらに弱い可能性のニュアンスになる', appliedMeaning: '勉強するかもしれないか、という弱い推測になる' },
+      { key: 'D', text: 'Do you study', correct: false, reasonCode: 'V_MOD_TENSE_MISMATCH', note: '習慣の現在になり、今週末の予定にならない', appliedMeaning: '普段図書館で勉強する習慣があるか、という意味になる' },
+    ],
+  },
+  {
+    id: 9,
+    tag: 'V-MOD-DYN',
     sceneTag: '寮生活',
     functionTag: '情報を得る',
     contextEn: 'Every morning before school, she practices.',

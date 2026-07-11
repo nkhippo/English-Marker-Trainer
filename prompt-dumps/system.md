@@ -112,7 +112,11 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 7. V-MOD-DEO は義務・許可用法のみ（must=きっと〜だ の確信用法は禁止）。日本語に「きっと」「確かに」「に違いない」「絶対」を入れない。
 8. appliedMeaning は日本語1文。「〜という意味になる」で締める。誤答をそのまま使ったとき聞き手が受け取る意味を書く。
 9. V-MOD-DYN 特例（§5.6.1）: 穴には動詞句全体。baseVerb 必須。全4選択肢は同じ baseVerb を末尾に持つ。(bare) 正解時は主語に合わせた活用形（三単現 -s 等）のみ。options の lemma 集合は poolUsed と完全一致必須（can / be able to / be going to 等。able to・going to と略さない）。
-10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。
+   - **be / do を ___ の外に置いて形態を縛らない**（× Are you ___? + going to study だけが合法 → Are/do も選択肢へ）。
+     - ○ ___ at the library this weekend? → Are you going to study / Will you study / May you study / Do you study
+     - ○ You ___ at the library this weekend. → are going to study / will study / may study / study
+     - × Are you ___ at the library this weekend? → study / may study / might study / going to study
+10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。be/do によるスロット固定も V-MOD-DYN と同様に禁止。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
 12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。a cup of {n} の cup は headNoun に合う単位（glass/bowl/piece/bottle/slice 等）へ置き換えてよい。
 13. V-VOICE: 態×相の対比を、**主語より後の動詞句全体を1ユニット**として問う。
@@ -138,6 +142,10 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
    - ○ How ___? + is this window opened / does this window open / …
    - ○ The report ___ by Friday. + must be written（主語は template のみ）
    疑問の倒置で主語を選択肢に含めるなら、template 側からその主語を除く。
+16. **スロット固定の禁止（全タグ共通・最重要）**: ___ の直前に do/does/did/have/has/had/am/is/are/was/were（＋代名詞）を置き、初等の形態規則だけで正解が絞れる形にしてはならない。
+   - 訓練対象はマーカーの意味・選択であり、「Are→going/-ing」「did→原形」「have→過去分詞」等の既習ルール確認ではない。
+   - 誤答を穴に入れても、文として形態的に成立しうる対比にすること（意味・ニュアンス・態・時制で落とす）。
+   - 名詞タグの Is there ___? / Do you want ___? のように、穴が名詞句で全選択肢が同じ統語枠に収まる場合は可。
 
 ## 助動詞プール参考
 V-MOD-DYN: (bare), can, could, be able to, will, would, be going to, may, might
@@ -359,6 +367,57 @@ V-MOD-DEO: must, have to, need to, should, ought to, had better, be supposed to,
 
 {
   "id": 6,
+  "tag": "V-MOD-DYN",
+  "sceneTag": "教室",
+  "functionTag": "確認する",
+  "contextEn": "The teacher asked about weekend plans.",
+  "ja": "あなたは今週末に図書館で勉強するつもりですか。",
+  "template": "___ at the library this weekend?",
+  "baseVerb": "study",
+  "poolUsed": [
+    "(bare)",
+    "may",
+    "might",
+    "be going to"
+  ],
+  "options": [
+    {
+      "key": "A",
+      "text": "Are you going to study",
+      "correct": true,
+      "reasonCode": null,
+      "note": null,
+      "appliedMeaning": null
+    },
+    {
+      "key": "B",
+      "text": "May you study",
+      "correct": false,
+      "reasonCode": "V_MOD_TOO_WEAK",
+      "note": "許可・可能性のニュアンスになる",
+      "appliedMeaning": "勉強してもよいですか、という意味に変わってしまう"
+    },
+    {
+      "key": "C",
+      "text": "Might you study",
+      "correct": false,
+      "reasonCode": "V_MOD_TOO_WEAK",
+      "note": "さらに弱い可能性のニュアンスになる",
+      "appliedMeaning": "勉強するかもしれないか、という弱い推測になる"
+    },
+    {
+      "key": "D",
+      "text": "Do you study",
+      "correct": false,
+      "reasonCode": "V_MOD_TENSE_MISMATCH",
+      "note": "習慣の現在になり、今週末の予定にならない",
+      "appliedMeaning": "普段図書館で勉強する習慣があるか、という意味になる"
+    }
+  ]
+}
+
+{
+  "id": 9,
   "tag": "V-MOD-DYN",
   "sceneTag": "寮生活",
   "functionTag": "情報を得る",

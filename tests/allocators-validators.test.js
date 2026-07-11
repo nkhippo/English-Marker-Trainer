@@ -17,6 +17,8 @@ import {
   isIllFormedModalParticiple,
   findTemplateOptionPhraseOverlap,
   optionsHaveTaFiniteOperator,
+  sanitizeSlotLockingBlank,
+  findSlotLockingAuxBeforeBlank,
 } from '../src/utils/validators.js';
 import { hasLemmaOverflow, getOverflowingLemmas } from '../src/utils/lemmaCounter.js';
 import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
@@ -558,6 +560,67 @@ describe('validators', () => {
       expectedPool: null,
     });
     assert.ok(!ok.errors.some((e) => e.startsWith('V21')), ok.errors.join('; '));
+  });
+
+  it('lifts Are you slot-lock into V-MOD-DYN options (V22)', () => {
+    assert.ok(findSlotLockingAuxBeforeBlank('Are you ___ at the library this weekend?'));
+    assert.equal(findSlotLockingAuxBeforeBlank('Is there ___ in the fridge?'), null);
+    assert.equal(findSlotLockingAuxBeforeBlank('You ___ at the library this weekend.'), null);
+
+    const item = sanitizeSlotLockingBlank({
+      tag: 'V-MOD-DYN',
+      baseVerb: 'study',
+      sceneTag: '教室',
+      functionTag: '確認する',
+      contextEn: 'The teacher asked about weekend plans.',
+      ja: 'あなたは今週末に図書館で勉強するつもりですか。',
+      template: 'Are you ___ at the library this weekend?',
+      options: [
+        { key: 'A', text: 'study', correct: false, reasonCode: 'V_MOD_TENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        { key: 'B', text: 'may study', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'might study', correct: false, reasonCode: 'V_MOD_TOO_WEAK', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'going to study', correct: true, reasonCode: null },
+      ],
+    });
+
+    assert.equal(item.template, '___ at the library this weekend?');
+    assert.ok(item.options.some((o) => /^Are you going to study$/i.test(o.text)));
+    assert.ok(item.options.some((o) => /^Do you study$/i.test(o.text)));
+    assert.ok(item.options.some((o) => /^May you study$/i.test(o.text)));
+    assert.equal(findSlotLockingAuxBeforeBlank(item.template), null);
+
+    const { errors } = validateItem(item, {
+      expectedTag: 'V-MOD-DYN',
+      expectedScene: { sceneTag: '教室', functionTag: '確認する' },
+      expectedPool: ['(bare)', 'may', 'might', 'be going to'],
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V13') || e.startsWith('V16') || e.startsWith('V22')), errors.join('; '));
+  });
+
+  it('rejects remaining slot-lock on non-modal verb tags (V22)', () => {
+    const { errors } = validateItem(
+      {
+        id: 1,
+        tag: 'V-VOICE',
+        sceneTag: '家庭',
+        functionTag: '情報を得る',
+        contextEn: null,
+        ja: 'この窓はどうやって開けるの？',
+        template: 'How is ___ opened?',
+        options: [
+          { key: 'A', text: 'this window', correct: true, reasonCode: null },
+          { key: 'B', text: 'the window', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'a window', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'windows', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      {
+        expectedTag: 'V-VOICE',
+        expectedScene: { sceneTag: '家庭', functionTag: '情報を得る' },
+        expectedPool: null,
+      },
+    );
+    assert.ok(errors.some((e) => e.startsWith('V22')), errors.join('; '));
   });
 
   it('rejects template/option phrase overlap (V20)', () => {

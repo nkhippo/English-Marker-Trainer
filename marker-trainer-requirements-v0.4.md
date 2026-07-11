@@ -335,6 +335,7 @@ LLM には**理由文を書かせず、コードの選択と一言補足（40字
 | V18 | `V-VOICE` の選択肢に**助動詞＋過去分詞の直接接続**（`should known` / `must written` 等＝be/have 欠落の形態不全）が含まれないこと。誤答は態・相の対比として形が成立するものに限る |
 | V20 | `template` の `___` 以外と `options.text` で**2語以上の連続フレーズが重複しない**こと（例: `How ___ this window?` × `is this window opened`）。穴埋め後に主語などが二重にならないこと |
 | V21 | `V-TA` の場合、options 4つの text のうち少なくとも1つに finite operator（do/does/did/have/has/had/is/are/was/were/am）が含まれていること。時制の担い手が template に漏れていないかを検出する |
+| V22 | 動詞・助動詞・一致系タグで、`___` 直前に do/does/did/have/has/had/am/is/are/was/were（＋代名詞可）を置かないこと。初等形態規則だけで正解が絞れるスロット固定を禁止（例: `Are you ___?` + `going to study`）。名詞の `Is there ___?` は対象外 |
 
 > 設計原則：**プロンプトで頼むのは「意味の妥当性」だけ。数・形・分布はすべてコードで強制する。** ただし `appliedMeaning`（誤答を当てはめた場合の訳文）は定型化できないため、**内容の正しさまではコード検証できない**。代わりに **MDエクスポート → Claude Projects で毎回検証**する運用（§7・§9）。
 
