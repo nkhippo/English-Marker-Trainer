@@ -576,36 +576,22 @@ function validateV18(item) {
   return null;
 }
 
-/** template で have/has/had が ___ より前にあり、完了の後続スロットを問う形か */
-export function templateHasPerfectAuxBeforeBlank(template) {
-  if (typeof template !== 'string') return false;
-  const idx = template.indexOf('___');
-  if (idx === -1) return false;
-  const before = template.slice(0, idx);
-  return /\b(have|has|had)\b/i.test(before);
+/** V19 は削除済み（V-TA を (A) 一本化したため。(B) have-outside-blank 前提の検証だった） */
+
+const V_TA_FINITE_OPS = /\b(do|does|did|have|has|had|is|are|was|were|am)\b/i;
+
+/**
+ * V21: V-TA では時制の担い手（有限の助動詞・be動詞）が options の少なくとも1つに含まれること。
+ * template に did/have/was 等が漏れている問題を、options 側必須で検出する。
+ */
+export function optionsHaveTaFiniteOperator(item) {
+  return (item.options ?? []).some((o) => V_TA_FINITE_OPS.test(o.text ?? ''));
 }
 
-/** have 後続スロットに置けない有限動詞・別助動詞句 */
-const FINITE_OR_AUX_OPTION =
-  /^(am|is|are|was|were|do|does|did|have|has|had|will|would|can|could|may|might|must|shall|should)\b/i;
-
-/** @returns {boolean} true if option cannot follow have/has/had in the blank */
-export function isIncompatibleAfterPerfectAux(text) {
-  if (typeof text !== 'string') return false;
-  const t = text.trim();
-  if (!t) return false;
-  // been + ... は完了進行として許容
-  if (/^been\b/i.test(t)) return false;
-  return FINITE_OR_AUX_OPTION.test(t);
-}
-
-function validateV19(item) {
+function validateV21(item) {
   if (item.tag !== 'V-TA') return null;
-  if (!templateHasPerfectAuxBeforeBlank(item.template)) return null;
-  for (const opt of item.options ?? []) {
-    if (isIncompatibleAfterPerfectAux(opt.text)) {
-      return `V19: option incompatible after have/has/had "${opt.text}"`;
-    }
+  if (!optionsHaveTaFiniteOperator(item)) {
+    return 'V21: V-TA options missing finite operator (do/does/did/have/has/had/is/are/was/were/am)';
   }
   return null;
 }
@@ -666,8 +652,8 @@ const ITEM_VALIDATORS = [
   validateV16,
   validateV17,
   validateV18,
-  validateV19,
   validateV20,
+  validateV21,
 ];
 
 /**

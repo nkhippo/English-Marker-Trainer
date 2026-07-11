@@ -89,7 +89,7 @@
 | `N-NP` | a bookstore / the bookstore / bookstores / the bookstores | 数 × 限定性 |
 | `N-UNC` | water / a water / waters / the water（たまに a cup of water 等の単位表現） | 可算性 × 限定性（＋単位） |
 | `N-QNT` | many / much / few / little | 可算性 × 量の多寡 |
-| `V-TA` | played / was playing / has played / had played（または Have you ___? → made / make / making / been making のように have を template 側に残す） | 時制 × 相（have を穴の外に置く場合は、後続スロットに有限動詞・別助動詞句を置かない） |
+| `V-TA` | played / was playing / has played / had played（時制助動詞は常に選択肢側。疑問文では主語込み） | 時制 × 相 |
 | `V-VOICE` | wrote / was written / was writing / has written | 態 × 相（4択はいずれも文法的に成立する動詞句。助動詞＋過去分詞の直接接続〈should known 等〉は禁止） |
 | `M-AGR` | is / are / was / were | 数 × 時制 |
 | `M-PRON-NUM` | it / they / it（単数用） / they（複数用） ※先行詞の数で作問 | 数 |
@@ -165,6 +165,8 @@ LLM には**理由文を書かせず、コードの選択と一言補足（40字
 | `V_TENSE` | 文中の時の表現と時制が合わない |
 | `V_ASPECT` | 相（進行・完了）の選択が文脈と合わない |
 | `V_VOICE` | 主語が動作をする側か受ける側かが逆 |
+
+> **template 契約（v0.5 更新）**: 時制助動詞（do/does/did/have/has/had/is/are/was/were/am）は template に置かず、必ず選択肢側に含める。疑問文では主語も含めて選択肢に置く。詳細は system プロンプト制約14。
 
 ### 3.3 助動詞系（`V-MOD-DYN` / `V-MOD-DEO` 専用・候補プール由来）
 
@@ -331,8 +333,8 @@ LLM には**理由文を書かせず、コードの選択と一言補足（40字
 | V14 | `V-MOD-DEO` の**日本語文**に確信副詞（`きっと` `確かに` `〜に違いない` `絶対〜だ`）が含まれないこと。含まれる場合は場面が「確信」用法に流れた疑いあり → 再生成。**上流はプロンプトで「義務・許可場面のみ」と強制**する二段構え |
 | V15 | **全 Item の `template` が慣用句フレーズと一致しないこと**（§1.2 慣用句排除ルール）。正規表現ブラックリスト：`^(May\|Can\|Could\|Would\|Will\|Shall)\s+(I\|we\|you)\s` / `Why\s+don't\s+(you\|we)` / `How\s+about` / `What\s+about\s+\w+ing` / `Would\s+you\s+like` / `^Let's\s` / `Would\s+you\s+mind` 等にマッチしたら再生成 |
 | V18 | `V-VOICE` の選択肢に**助動詞＋過去分詞の直接接続**（`should known` / `must written` 等＝be/have 欠落の形態不全）が含まれないこと。誤答は態・相の対比として形が成立するものに限る |
-| V19 | `V-TA` で `have` / `has` / `had` が `___` より前にあるとき、選択肢に有限動詞・別助動詞句（`was making` / `has made` 等）を含めないこと。完了の後続スロット候補（過去分詞・原形・-ing・been+-ing 等）に限る |
 | V20 | `template` の `___` 以外と `options.text` で**2語以上の連続フレーズが重複しない**こと（例: `How ___ this window?` × `is this window opened`）。穴埋め後に主語などが二重にならないこと |
+| V21 | `V-TA` の場合、options 4つの text のうち少なくとも1つに finite operator（do/does/did/have/has/had/is/are/was/were/am）が含まれていること。時制の担い手が template に漏れていないかを検出する |
 
 > 設計原則：**プロンプトで頼むのは「意味の妥当性」だけ。数・形・分布はすべてコードで強制する。** ただし `appliedMeaning`（誤答を当てはめた場合の訳文）は定型化できないため、**内容の正しさまではコード検証できない**。代わりに **MDエクスポート → Claude Projects で毎回検証**する運用（§7・§9）。
 

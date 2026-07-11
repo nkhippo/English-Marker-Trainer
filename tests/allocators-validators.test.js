@@ -15,9 +15,8 @@ import {
   sanitizeLemmaOverflow,
   validateSet,
   isIllFormedModalParticiple,
-  isIncompatibleAfterPerfectAux,
-  templateHasPerfectAuxBeforeBlank,
   findTemplateOptionPhraseOverlap,
+  optionsHaveTaFiniteOperator,
 } from '../src/utils/validators.js';
 import { hasLemmaOverflow, getOverflowingLemmas } from '../src/utils/lemmaCounter.js';
 import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
@@ -360,53 +359,62 @@ describe('validators', () => {
     assert.ok(!ok.errors.some((e) => e.startsWith('V18')), ok.errors.join('; '));
   });
 
-  it('rejects finite options after have/has/had before blank (V19)', () => {
-    assert.equal(templateHasPerfectAuxBeforeBlank('Have you already ___ your plan?'), true);
-    assert.equal(templateHasPerfectAuxBeforeBlank('I ___ dinner when the phone rang.'), false);
-    assert.equal(isIncompatibleAfterPerfectAux('was making'), true);
-    assert.equal(isIncompatibleAfterPerfectAux('has made'), true);
-    assert.equal(isIncompatibleAfterPerfectAux('made'), false);
-    assert.equal(isIncompatibleAfterPerfectAux('make'), false);
-    assert.equal(isIncompatibleAfterPerfectAux('making'), false);
-    assert.equal(isIncompatibleAfterPerfectAux('been making'), false);
+  it('requires finite operator in V-TA options (V21)', () => {
+    assert.equal(
+      optionsHaveTaFiniteOperator({
+        options: [
+          { text: 'did you start' },
+          { text: 'have you started' },
+          { text: 'were you starting' },
+          { text: 'had you started' },
+        ],
+      }),
+      true,
+    );
+    assert.equal(
+      optionsHaveTaFiniteOperator({
+        options: [{ text: 'start' }, { text: 'starting' }, { text: 'started' }, { text: 'starts' }],
+      }),
+      false,
+    );
 
     const bad = {
       id: 1,
       tag: 'V-TA',
-      sceneTag: '自己と将来',
-      functionTag: '確認する',
+      sceneTag: '語学学校',
+      functionTag: '理由・目的を問う',
       contextEn: null,
-      ja: 'あなたはもう将来の計画を立てましたか？',
-      template: 'Have you already ___ your plan for the future?',
+      ja: 'あなたはなぜ英語を勉強し始めたのですか。',
+      template: 'Why ___ studying English?',
       options: [
-        { key: 'A', text: 'made', correct: true, reasonCode: null },
-        { key: 'B', text: 'make', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
-        { key: 'C', text: 'was making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
-        { key: 'D', text: 'making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'A', text: 'start', correct: true, reasonCode: null },
+        { key: 'B', text: 'starting', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'started', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'starts', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
       ],
     };
     const { errors } = validateItem(bad, {
       expectedTag: 'V-TA',
-      expectedScene: { sceneTag: '自己と将来', functionTag: '確認する' },
+      expectedScene: { sceneTag: '語学学校', functionTag: '理由・目的を問う' },
       expectedPool: null,
     });
-    assert.ok(errors.some((e) => e.startsWith('V19')), errors.join('; '));
+    assert.ok(errors.some((e) => e.startsWith('V21')), errors.join('; '));
 
     const good = {
       ...bad,
       options: [
-        { key: 'A', text: 'made', correct: true, reasonCode: null },
-        { key: 'B', text: 'make', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
-        { key: 'C', text: 'making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
-        { key: 'D', text: 'been making', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'A', text: 'did you start', correct: true, reasonCode: null },
+        { key: 'B', text: 'have you started', correct: false, reasonCode: 'V_TENSE', note: 'n', appliedMeaning: 'm' },
+        { key: 'C', text: 'were you starting', correct: false, reasonCode: 'V_ASPECT', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'had you started', correct: false, reasonCode: 'V_TENSE', note: 'n', appliedMeaning: 'm' },
       ],
     };
     const ok = validateItem(good, {
       expectedTag: 'V-TA',
-      expectedScene: { sceneTag: '自己と将来', functionTag: '確認する' },
+      expectedScene: { sceneTag: '語学学校', functionTag: '理由・目的を問う' },
       expectedPool: null,
     });
-    assert.ok(!ok.errors.some((e) => e.startsWith('V19')), ok.errors.join('; '));
+    assert.ok(!ok.errors.some((e) => e.startsWith('V21')), ok.errors.join('; '));
   });
 
   it('rejects template/option phrase overlap (V20)', () => {

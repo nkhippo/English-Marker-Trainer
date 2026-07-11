@@ -29,11 +29,11 @@ selectedTags: ["N-NP","N-UNC","N-QNT","V-TA","V-VOICE","V-MOD-DYN","V-MOD-DEO","
     "tag": "N-UNC",
     "sceneTag": "空港",
     "functionTag": "情報を得る",
-    "gridVariant": "some-any",
+    "gridVariant": "unit-of",
     "gridPatterns": [
       "{n}",
-      "some {n}",
-      "any {n}",
+      "a {n}",
+      "a cup of {n}",
       "the {n}"
     ],
     "countability": "uncountable"
@@ -106,7 +106,7 @@ selectedTags: ["N-NP","N-UNC","N-QNT","V-TA","V-VOICE","V-MOD-DYN","V-MOD-DEO","
 
 ## 名詞グリッド問の指示
 問1 (N-NP): gridVariant=determiners, gridPatterns=["a {n}","the {n}","some {n}s","any {n}s"], countability=countable
-問2 (N-UNC): gridVariant=some-any, gridPatterns=["{n}","some {n}","any {n}","the {n}"], countability=uncountable
+問2 (N-UNC): gridVariant=unit-of, gridPatterns=["{n}","a {n}","a cup of {n}","the {n}"], countability=uncountable
 
 tagAllocation のタグ・scene・poolUsed・gridPatterns を厳守すること。
 N-NP / N-UNC / N-QNT では headNoun・headNounJa・countability を必ず出力すること（欠けると検証失敗）。

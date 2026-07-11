@@ -100,11 +100,24 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
 10. V-MOD-DEO: 穴に助動詞相当フレーズ1つ。options の lemma 集合は poolUsed と完全一致必須（主語一致の活用 has to / needs to / is supposed to 等は可）。プール外の語を入れない。
 11. 固定グリッドタグは4択の text がユニークで、誤答には適切な reasonCode を付ける。
 12. N-NP / N-UNC では gridPatterns を headNoun に展開した4語を options.text に使う（順不同でよい）。a cup of {n} の cup は headNoun に合う単位（glass/bowl/piece/bottle/slice 等）へ置き換えてよい。
-13. V-VOICE: 4択はすべて**文法的に成立する動詞句**に限る（態×相の対比。例: wrote / was written / was writing / has written）。助動詞の直後に過去分詞だけを置く形（should known / must written 等＝be/have 欠落の形態不全）は禁止。誤答は「態や相が違うが形としては成立する」ものだけにする。
-14. V-TA: 時制×相の対比。次の2パターンのいずれか。
-   - (A) 動詞句全体を穴に入れる（例: I ___ dinner when the phone rang. → was eating / ate / have eaten / had eaten）。
-   - (B) **have / has / had を template 側に残し**、穴にはその後続形だけを入れる（例: Have you already ___ your plan? → made / make / making / been making）。学習者に have マーカーを見せ、have を含めた完了の時制・相の妥当性を問う。
-   (B) のとき、選択肢を ___ に入れた**文全体**で時制・相を判定できること。have/has/had のあとに有限動詞・別の助動詞句（was making / has made / is making 等）を置いて二重時制・形態不全になる選択肢は禁止。誤答は「完了のスロット候補になりうる非定形」（原形・過去分詞・-ing・been+-ing 等）に限り、have と組み合わせたときの時制・相のずれを説明すること。
+13. V-VOICE: 態×相の対比を、**主語より後の動詞句全体を1ユニット**として問う。
+   - 主語は template 側、動詞句全体（助動詞・be動詞・過去分詞/現在分詞を含む）は選択肢側に置く。
+     - 例) The report ___ by Friday. → must be written / must write / is writing / has written
+   - 4択はすべて**文法的に成立する動詞句**（態×相の対比）。be/have 欠落の形態不全（should known / must written 等）は禁止。
+   - 誤答は「態や相が違うが形としては成立する」ものだけにする。
+14. V-TA: 時制×相の対比を、**時制助動詞から先の動詞句全体を1ユニット**として問う。
+   - **穴 ___ には常に「時制助動詞（もしあれば）＋動詞句全体」を入れる**。疑問文では主語も含めて選択肢に置く。
+     - 平叙: I ___ dinner when the phone rang. → was eating / ate / have eaten / had eaten
+     - wh疑問: Why ___ studying English? → did you start / have you started / were you starting / had you started
+     - yes/no疑問: ___ your homework yet? → Have you finished / Did you finish / Were you finishing / Had you finished
+   - **禁止（最重要）**: do / does / did / have / has / had / is / are / was / were / am を **___ の外の位置に書かない**。時制の担い手（定形の助動詞・be動詞）は必ず**選択肢の中**にあること。
+     - × Why did you ___ studying English?   （did が template に残っている）
+     - × Have you already ___?               （have が template に残っている）
+     - × I ___ eating when he came.          （was が template に残っている）
+     - ○ Why ___ studying English?            / did you start / have you started / were you starting / had you started
+     - ○ ___ already?                         / Have you finished / Did you finish / Were you finishing / Had you finished
+   - 4択はすべて**文法的に成立する動詞句ユニット**（疑問文なら主語込み）。**形態不全ミス**（did の後に過去形、have の後に -ing 単独、原形と -ing の混在等、初等 do-support / have+pp / be+ing 規則の確認になるもの）を誤答に含めない。
+   - 誤答は「時制（現在/過去）× 相（単純/進行/完了/完了進行）」のいずれかの軸でズレていることを appliedMeaning で説明する。形態的な非文法を誤答にしない。
 15. **template と options の語句重複禁止**: ___ 以外に書いた名詞句・主語などを options.text に繰り返さない。穴に入れたとき二重にならないこと。
    - × How ___ this window? + is this window opened → How is this window opened this window?
    - ○ How ___? + is this window opened / does this window open / …
