@@ -120,6 +120,11 @@ N-QNT: 数量詞のみ4択（many / much / few / little）。headNoun と counta
    - (A) 動詞句全体を穴に入れる（例: I ___ dinner when the phone rang. → was eating / ate / have eaten / had eaten）。
    - (B) **have / has / had を template 側に残し**、穴にはその後続形だけを入れる（例: Have you already ___ your plan? → made / make / making / been making）。学習者に have マーカーを見せ、have を含めた完了の時制・相の妥当性を問う。
    (B) のとき、選択肢を ___ に入れた**文全体**で時制・相を判定できること。have/has/had のあとに有限動詞・別の助動詞句（was making / has made / is making 等）を置いて二重時制・形態不全になる選択肢は禁止。誤答は「完了のスロット候補になりうる非定形」（原形・過去分詞・-ing・been+-ing 等）に限り、have と組み合わせたときの時制・相のずれを説明すること。
+15. **template と options の語句重複禁止**: ___ 以外に書いた名詞句・主語などを options.text に繰り返さない。穴に入れたとき二重にならないこと。
+   - × How ___ this window? + is this window opened → How is this window opened this window?
+   - ○ How ___? + is this window opened / does this window open / …
+   - ○ The report ___ by Friday. + must be written（主語は template のみ）
+   疑問の倒置で主語を選択肢に含めるなら、template 側からその主語を除く。
 
 ## 助動詞プール参考
 V-MOD-DYN: (bare), can, could, be able to, will, would, be going to, may, might

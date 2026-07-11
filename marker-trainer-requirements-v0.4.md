@@ -332,6 +332,7 @@ LLM には**理由文を書かせず、コードの選択と一言補足（40字
 | V15 | **全 Item の `template` が慣用句フレーズと一致しないこと**（§1.2 慣用句排除ルール）。正規表現ブラックリスト：`^(May\|Can\|Could\|Would\|Will\|Shall)\s+(I\|we\|you)\s` / `Why\s+don't\s+(you\|we)` / `How\s+about` / `What\s+about\s+\w+ing` / `Would\s+you\s+like` / `^Let's\s` / `Would\s+you\s+mind` 等にマッチしたら再生成 |
 | V18 | `V-VOICE` の選択肢に**助動詞＋過去分詞の直接接続**（`should known` / `must written` 等＝be/have 欠落の形態不全）が含まれないこと。誤答は態・相の対比として形が成立するものに限る |
 | V19 | `V-TA` で `have` / `has` / `had` が `___` より前にあるとき、選択肢に有限動詞・別助動詞句（`was making` / `has made` 等）を含めないこと。完了の後続スロット候補（過去分詞・原形・-ing・been+-ing 等）に限る |
+| V20 | `template` の `___` 以外と `options.text` で**2語以上の連続フレーズが重複しない**こと（例: `How ___ this window?` × `is this window opened`）。穴埋め後に主語などが二重にならないこと |
 
 > 設計原則：**プロンプトで頼むのは「意味の妥当性」だけ。数・形・分布はすべてコードで強制する。** ただし `appliedMeaning`（誤答を当てはめた場合の訳文）は定型化できないため、**内容の正しさまではコード検証できない**。代わりに **MDエクスポート → Claude Projects で毎回検証**する運用（§7・§9）。
 

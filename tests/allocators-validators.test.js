@@ -17,6 +17,7 @@ import {
   isIllFormedModalParticiple,
   isIncompatibleAfterPerfectAux,
   templateHasPerfectAuxBeforeBlank,
+  findTemplateOptionPhraseOverlap,
 } from '../src/utils/validators.js';
 import { hasLemmaOverflow, getOverflowingLemmas } from '../src/utils/lemmaCounter.js';
 import { rewriteIdiomTemplate, containsIdiom } from '../src/constants/idiomBlocklist.js';
@@ -406,6 +407,51 @@ describe('validators', () => {
       expectedPool: null,
     });
     assert.ok(!ok.errors.some((e) => e.startsWith('V19')), ok.errors.join('; '));
+  });
+
+  it('rejects template/option phrase overlap (V20)', () => {
+    assert.equal(
+      findTemplateOptionPhraseOverlap('How ___ this window?', 'is this window opened'),
+      'this window',
+    );
+    assert.equal(findTemplateOptionPhraseOverlap('How ___?', 'is this window opened'), null);
+    assert.equal(
+      findTemplateOptionPhraseOverlap('The report ___ by Friday.', 'must be written'),
+      null,
+    );
+
+    const bad = {
+      id: 1,
+      tag: 'V-VOICE',
+      sceneTag: '家庭',
+      functionTag: '情報を得る',
+      contextEn: null,
+      ja: 'この窓はどうやって開けるの？',
+      template: 'How ___ this window?',
+      options: [
+        { key: 'A', text: 'has this window been opening', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'B', text: 'is this window opened', correct: true, reasonCode: null },
+        { key: 'C', text: 'does this window open', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+        { key: 'D', text: 'was this window opened', correct: false, reasonCode: 'V_VOICE', note: 'n', appliedMeaning: 'm' },
+      ],
+    };
+    const { errors } = validateItem(bad, {
+      expectedTag: 'V-VOICE',
+      expectedScene: { sceneTag: '家庭', functionTag: '情報を得る' },
+      expectedPool: null,
+    });
+    assert.ok(errors.some((e) => e.startsWith('V20')), errors.join('; '));
+
+    const good = {
+      ...bad,
+      template: 'How ___?',
+    };
+    const ok = validateItem(good, {
+      expectedTag: 'V-VOICE',
+      expectedScene: { sceneTag: '家庭', functionTag: '情報を得る' },
+      expectedPool: null,
+    });
+    assert.ok(!ok.errors.some((e) => e.startsWith('V20')), ok.errors.join('; '));
   });
 
   it('truncates option notes longer than 40 chars', () => {

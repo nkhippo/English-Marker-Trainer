@@ -610,6 +610,46 @@ function validateV19(item) {
   return null;
 }
 
+function normalizeOverlapTokens(text) {
+  return String(text)
+    .toLowerCase()
+    .replace(/___/g, ' ')
+    .replace(/[^\w\s']/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+/**
+ * template の ___ 以外と option で、2語以上の連続フレーズが重複していればそのフレーズを返す
+ * @returns {string|null}
+ */
+export function findTemplateOptionPhraseOverlap(template, optionText) {
+  if (typeof template !== 'string' || typeof optionText !== 'string') return null;
+  const fixedTokens = normalizeOverlapTokens(template);
+  const optTokens = normalizeOverlapTokens(optionText);
+  if (fixedTokens.length < 2 || optTokens.length < 2) return null;
+
+  const optJoined = ` ${optTokens.join(' ')} `;
+  const maxN = Math.min(fixedTokens.length, optTokens.length, 6);
+  for (let n = maxN; n >= 2; n--) {
+    for (let i = 0; i <= fixedTokens.length - n; i++) {
+      const phrase = fixedTokens.slice(i, i + n).join(' ');
+      if (optJoined.includes(` ${phrase} `)) return phrase;
+    }
+  }
+  return null;
+}
+
+function validateV20(item) {
+  for (const opt of item.options ?? []) {
+    const overlap = findTemplateOptionPhraseOverlap(item.template, opt.text);
+    if (overlap) {
+      return `V20: template/option phrase overlap "${overlap}" in "${opt.text}"`;
+    }
+  }
+  return null;
+}
+
 const ITEM_VALIDATORS = [
   validateV2,
   validateV3,
@@ -627,6 +667,7 @@ const ITEM_VALIDATORS = [
   validateV17,
   validateV18,
   validateV19,
+  validateV20,
 ];
 
 /**
