@@ -158,14 +158,21 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
   }
 
   // V-MOD-DYN
-  let baseVerb = item.baseVerb;
-  if (!baseVerb) {
-    baseVerb = inferDynBaseVerb(options);
-    if (!baseVerb) return item;
+  let baseVerb = item.baseVerb?.trim() || inferDynBaseVerb(options);
+  if (!baseVerb) return item;
+  baseVerb = normalizeDynBaseVerb(baseVerb);
+
+  // モデルの baseVerb と選択肢の動詞が食い違う場合は、選択肢側を優先して推定し直す
+  const matchingCount = options.filter((o) => dynOptionUsesBaseVerb(o.text, baseVerb)).length;
+  if (matchingCount < 2) {
+    const inferred = inferDynBaseVerb(options);
+    if (inferred) baseVerb = inferred;
   }
 
   const lemmas = options.map((o) => modalLemmaFromDynOption(o.text, baseVerb));
-  if (poolSetsMatch(lemmas, expected)) {
+  const poolOk = poolSetsMatch(lemmas, expected);
+  const baseVerbOk = options.every((o) => dynOptionUsesBaseVerb(o.text, baseVerb));
+  if (poolOk && baseVerbOk) {
     return { ...item, baseVerb, poolUsed: [...expectedPool] };
   }
 
@@ -177,14 +184,18 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
 
   const byLemma = new Map();
   for (const opt of options) {
-    byLemma.set(modalLemmaFromDynOption(opt.text, baseVerb), opt);
+    const lemma = modalLemmaFromDynOption(opt.text, baseVerb);
+    // 別動詞の (bare) などは採用しない（carries vs bring 等）
+    if (dynOptionUsesBaseVerb(opt.text, baseVerb)) {
+      byLemma.set(lemma, opt);
+    }
   }
 
   const rebuilt = expectedPool.map((lemma, i) => {
     const key = String.fromCharCode(65 + i);
     const prev = byLemma.get(lemma.toLowerCase());
     const isCorrect = lemma.toLowerCase() === correctLemma;
-    const text = prev?.text && modalLemmaFromDynOption(prev.text, baseVerb) === lemma.toLowerCase()
+    const text = prev?.text && dynOptionUsesBaseVerb(prev.text, baseVerb)
       ? prev.text
       : expandModalOption('V-MOD-DYN', lemma, baseVerb);
 
@@ -212,6 +223,26 @@ export function sanitizeModalPoolOptions(item, expectedPool) {
   return { ...item, baseVerb, poolUsed: [...expectedPool], options: rebuilt };
 }
 
+/** 選択肢テキストが baseVerb（またはその活用）を含むか */
+export function dynOptionUsesBaseVerb(text, baseVerb) {
+  if (typeof text !== 'string' || !baseVerb) return false;
+  const t = text.trim().toLowerCase();
+  const bv = baseVerb.trim().toLowerCase();
+  if (t.includes(bv)) return true;
+  return looksLikeBaseVerbForm(t, bv);
+}
+
+function normalizeDynBaseVerb(baseVerb) {
+  let v = String(baseVerb).trim().toLowerCase();
+  // carries → carry / finishes → finish（単一語の三単現を原形へ）
+  if (!v.includes(' ')) {
+    if (v.endsWith('ies') && v.length > 4) v = `${v.slice(0, -3)}y`;
+    else if (v.endsWith('es') && /(ch|sh|ss|x|z|o)$/.test(v.slice(0, -2))) v = v.slice(0, -2);
+    else if (v.endsWith('s') && v.length > 3 && !v.endsWith('ss')) v = v.slice(0, -1);
+  }
+  return v;
+}
+
 /** 正解が pool 内ならそれを使い、外なら options 中の pool 内 lemma、それも無ければ pool 先頭 */
 function pickCorrectLemmaInPool(options, expectedLower, lemmaOf) {
   const correct = options.find((o) => o.correct);
@@ -225,26 +256,30 @@ function pickCorrectLemmaInPool(options, expectedLower, lemmaOf) {
   return expectedLower[0];
 }
 
-/** baseVerb 欠落時、選択肢末尾の共通動詞を推定 */
+/** baseVerb 欠落時、正解または多数派の末尾動詞を推定 */
 function inferDynBaseVerb(options) {
-  const tails = (options ?? [])
+  const list = options ?? [];
+  const correct = list.find((o) => o.correct);
+  const ordered = correct ? [correct, ...list.filter((o) => o !== correct)] : list;
+  const tails = ordered
     .map((o) => String(o.text ?? '').trim().toLowerCase())
     .filter(Boolean)
-    .map((t) => {
-      const parts = t.split(/\s+/);
-      return parts[parts.length - 1];
-    });
+    .map((t) => t.split(/\s+/).pop());
   if (!tails.length) return null;
+
+  // 正解の末尾を優先
+  if (correct) {
+    const fromCorrect = normalizeDynBaseVerb(tails[0]);
+    if (fromCorrect) return fromCorrect;
+  }
+
   const counts = {};
-  for (const t of tails) counts[t] = (counts[t] ?? 0) + 1;
+  for (const t of tails) {
+    const n = normalizeDynBaseVerb(t);
+    counts[n] = (counts[n] ?? 0) + 1;
+  }
   const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
-  if (!best || best[1] < 2) return null;
-  // finishes → finish 程度の簡易正規化
-  let v = best[0];
-  if (v.endsWith('ies') && v.length > 4) v = `${v.slice(0, -3)}y`;
-  else if (v.endsWith('es') && v.length > 3) v = v.slice(0, -2);
-  else if (v.endsWith('s') && v.length > 2) v = v.slice(0, -1);
-  return v;
+  return best?.[0] ?? null;
 }
 
 /**

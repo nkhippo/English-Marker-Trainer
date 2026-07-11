@@ -277,6 +277,32 @@ describe('validators', () => {
     assert.ok(!errors.some((e) => e.startsWith('V13') || e.startsWith('V16')), errors.join('; '));
   });
 
+  it('replaces mismatched bare verb that would fail V16', () => {
+    const item = sanitizeModalPoolOptions(
+      {
+        tag: 'V-MOD-DYN',
+        baseVerb: 'bring',
+        sceneTag: '空港',
+        functionTag: '情報を得る',
+        template: 'She ___ a bag to the airport.',
+        options: [
+          { key: 'A', text: 'carries', correct: true, reasonCode: null },
+          { key: 'B', text: 'can bring', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'C', text: 'will bring', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+          { key: 'D', text: 'may bring', correct: false, reasonCode: 'V_MOD_SENSE_MISMATCH', note: 'n', appliedMeaning: 'm' },
+        ],
+      },
+      ['(bare)', 'can', 'will', 'may'],
+    );
+    assert.equal(item.baseVerb, 'bring');
+    assert.ok(item.options.every((o) => o.text.toLowerCase().includes('bring')), JSON.stringify(item.options));
+    const { errors } = validateItem(item, {
+      ...modalMeta('V-MOD-DYN', ['(bare)', 'can', 'will', 'may']),
+      expectedScene: { sceneTag: '空港', functionTag: '情報を得る' },
+    });
+    assert.ok(!errors.some((e) => e.startsWith('V13') || e.startsWith('V16')), errors.join('; '));
+  });
+
   it('fills missing headNounJa and countability for noun tags', () => {
     const item = sanitizeNounLexicalFields(
       {
