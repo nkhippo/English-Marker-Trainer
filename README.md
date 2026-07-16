@@ -1,3 +1,10 @@
+---
+id: pj-2026-07-10-aa07
+aliases:
+- pj-2026-07-10-aa07
+title: English Marker Trainer
+created: '2026-07-10'
+---
 # English Marker Trainer
 
 英語の冠詞・単複・時制・助動詞などの**判別感度**を、4択10問で診断するトレーナーアプリ。

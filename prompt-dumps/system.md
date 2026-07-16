@@ -1,3 +1,10 @@
+---
+id: pj-2026-07-10-a925
+aliases:
+- pj-2026-07-10-a925
+title: 'System Prompt (cache_control: ephemeral)'
+created: '2026-07-10'
+---
 # System Prompt (cache_control: ephemeral)
 
 ## System

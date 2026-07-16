@@ -1,3 +1,10 @@
+---
+id: pj-2026-07-10-4871
+aliases:
+- pj-2026-07-10-4871
+title: User Prompt Sample
+created: '2026-07-10'
+---
 # User Prompt Sample
 
 ## User

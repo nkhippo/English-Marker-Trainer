@@ -1,0 +1,25 @@
+rewrite README.md (md=0 wiki=0 fm=0)
+rewrite WORK_REPORT.md (md=0 wiki=0 fm=0)
+rewrite consult-v-ta-did-options.md (md=0 wiki=0 fm=0)
+rewrite gas/README.md (md=0 wiki=0 fm=0)
+rewrite marker-trainer-requirements-v0.4.md (md=0 wiki=0 fm=0)
+rewrite prompt-dumps/system.md (md=0 wiki=0 fm=0)
+rewrite prompt-dumps/user-sample.md (md=0 wiki=0 fm=0)
+rewrite work-report-v-ta-did-reform.md (md=0 wiki=0 fm=0)
+dry-run totals: {'markdown_link': 0, 'wikilink': 0, 'frontmatter': 0}; broken=0
+=== README.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== WORK_REPORT.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== consult-v-ta-did-options.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== gas/README.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== marker-trainer-requirements-v0.4.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== prompt-dumps/system.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== prompt-dumps/user-sample.md ===
+changes: md_link=0 wikilink=0 frontmatter=0
+=== work-report-v-ta-did-reform.md ===
+changes: md_link=0 wikilink=0 frontmatter=0

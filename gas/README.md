@@ -1,3 +1,10 @@
+---
+id: pj-2026-07-10-6a18
+aliases:
+- pj-2026-07-10-6a18
+title: English Marker Trainer — GAS プロキシ
+created: '2026-07-10'
+---
 # English Marker Trainer — GAS プロキシ
 
 Claude API プロキシ（`gas/code.gs`）。**新規スタンドアロン GAS プロジェクト**として運用する。

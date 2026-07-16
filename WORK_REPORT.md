@@ -1,3 +1,10 @@
+---
+id: pj-2026-07-10-24bb
+aliases:
+- pj-2026-07-10-24bb
+title: English Marker Trainer — 作業報告書
+created: '2026-07-10'
+---
 # English Marker Trainer — 作業報告書
 
 **作業日**: 2026-07-10  
