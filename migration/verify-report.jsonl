@@ -1,0 +1,8 @@
+{"check": "V1", "status": "PASS", "total": 8, "failures": []}
+{"check": "V2", "status": "PASS", "total": 8, "failures": []}
+{"check": "V3", "status": "PASS", "total": 8, "failures": []}
+{"check": "V4", "status": "PASS", "total": 0, "failures": []}
+{"check": "V5", "status": "PASS", "total": 0, "failures": []}
+{"check": "V6", "status": "PASS", "total": 0, "failures": []}
+{"check": "V7", "status": "PASS", "total": 0, "failures": []}
+{"check": "V8", "status": "PASS", "total": 0, "failures": []}

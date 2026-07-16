@@ -1,0 +1,8 @@
+{"path": "README.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "English Marker Trainer", "first_commit_date": "2026-07-10T11:21:40+09:00"}
+{"path": "WORK_REPORT.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "English Marker Trainer — 作業報告書", "first_commit_date": "2026-07-10T11:21:40+09:00"}
+{"path": "consult-v-ta-did-options.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "相談: V-TA で `did` を選択肢に含める／`did` 後の原形は既知とする", "first_commit_date": "2026-07-11T12:15:24+09:00"}
+{"path": "gas/README.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "English Marker Trainer — GAS プロキシ", "first_commit_date": "2026-07-10T12:08:03+09:00"}
+{"path": "marker-trainer-requirements-v0.4.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "English Marker Trainer — 要件定義書 v0.4", "first_commit_date": "2026-07-10T11:21:40+09:00"}
+{"path": "prompt-dumps/system.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "System Prompt (cache_control: ephemeral)", "first_commit_date": "2026-07-10T11:21:40+09:00"}
+{"path": "prompt-dumps/user-sample.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "User Prompt Sample", "first_commit_date": "2026-07-10T11:21:40+09:00"}
+{"path": "work-report-v-ta-did-reform.md", "has_frontmatter": false, "existing_frontmatter": null, "body_start_line": 1, "first_h1": "作業報告 — V-TA `did` 問題の解消と (A) 一本化", "first_commit_date": "2026-07-11T12:48:45+09:00"}
