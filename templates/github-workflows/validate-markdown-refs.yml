@@ -1,0 +1,58 @@
+name: validate-markdown-refs
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**/*.md'
+      - 'scripts/validate/**'
+      - 'migration/broken-refs.csv'
+  push:
+    branches: [main, master]
+    paths:
+      - '**/*.md'
+      - 'scripts/validate/**'
+      - 'migration/broken-refs.csv'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install PyYAML
+
+      - name: Determine changed markdown files (PR mode)
+        if: github.event_name == 'pull_request'
+        id: changed
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff --name-only --diff-filter=AMR origin/${{ github.base_ref }}...HEAD -- '*.md' > changed-md.txt || true
+          echo "count=$(wc -l < changed-md.txt)" >> $GITHUB_OUTPUT
+
+      - name: Validate (PR mode)
+        if: github.event_name == 'pull_request'
+        run: |
+          if [ -s changed-md.txt ]; then
+            python scripts/validate/validate-markdown-refs.py \
+              --changed-files changed-md.txt \
+              --broken-refs migration/broken-refs.csv
+          else
+            echo "No markdown changes, skipping"
+          fi
+
+      - name: Validate (push mode)
+        if: github.event_name == 'push'
+        run: |
+          python scripts/validate/validate-markdown-refs.py \
+            --full-scan \
+            --broken-refs migration/broken-refs.csv
